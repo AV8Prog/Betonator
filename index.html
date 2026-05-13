@@ -909,6 +909,18 @@ body {
   font-size:11px; color:var(--label3); letter-spacing:-0.1px;
 }
 
+/* ── REBAR ── */
+.rebar-section { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); margin-bottom:16px; overflow:hidden; }
+.rebar-header-icon { width:34px; height:34px; border-radius:9px; background:rgba(255,149,0,0.12); display:flex; align-items:center; justify-content:center; color:var(--accent); flex-shrink:0; }
+.rebar-title { font-size:15px; font-weight:600; color:var(--label); }
+.tc-rebar  { background:linear-gradient(135deg,#FFF8F0,#FFEDD5); border-color:#FED7AA; }
+.tc-rebar.active { border-color:#C2410C; border-width:2.5px; box-shadow:0 0 0 3px rgba(194,65,12,0.18); }
+[data-theme="dark"] .tc-rebar { background:linear-gradient(135deg,rgba(154,52,18,0.15),rgba(154,52,18,0.08)); border-color:rgba(154,52,18,0.3); }
+[data-theme="dark"] .tc-rebar.active { border-color:#FB923C; box-shadow:0 0 0 3px rgba(251,146,60,0.25); }
+.tc-rebar .tc-name,.tc-rebar .tc-desc { color:#9A3412; }
+.tc-rebar .tc-icon-wrap { background:rgba(154,52,18,0.12); }
+.type-card-full { grid-column:1/-1; flex-direction:row !important; align-items:center; gap:14px; padding:14px 18px !important; }
+.type-card-full .tc-icon-wrap { margin-bottom:0 !important; flex-shrink:0; }
 /* ── ESTIMATE ── */
 .est-chip {
   padding:6px 14px; border-radius:20px; border:1.5px solid var(--separator);
@@ -992,6 +1004,13 @@ body {
         <div class="tc-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,20 3,16 7,16 7,12 11,12 11,8 15,8 15,4 21,4"/><line x1="3" y1="20" x2="21" y2="20"/></svg></div>
         <div class="tc-name">Лестница</div>
         <div class="tc-desc">Марш со ступенями</div>
+      </div>
+      <div class="type-card tc-rebar type-card-full" id="btn-rebar" onclick="selectType('rebar')">
+        <div class="tc-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="2" y1="17" x2="22" y2="17"/></svg></div>
+        <div>
+          <div class="tc-name">Спецификация арматуры</div>
+          <div class="tc-desc">Расчёт веса и вязальной проволоки</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1276,6 +1295,11 @@ const TYPES={
       return{slabTotal:s+e,concVol:H*L*T,details:dets};
     }
   },
+  rebar:{
+    label:'Спецификация арматуры',name:'Арматура',hasBeams:false,
+    fields:[],formula:'Вес = Σ кг по диаметрам',
+    calc(v){return{slabTotal:0,concVol:0,details:[]}}
+  },
   beam:{label:'Параметры балки',name:'Балка',hasBeams:false,
     fields:[
       {id:'height',label:'Высота балки',placeholder:'500',hint:'Высота сечения'},
@@ -1363,7 +1387,7 @@ let current='wall',beamCounter=0,beams=[],lastResult=null,qty=1,calcMode='dims',
 let perimMode='direct',sideCounter=0,sides=[];
 
 function selectType(type){
-  current=type;beams=[];beamCounter=0;lastResult=null;sides=[];sideCounter=0;calcMode='dims';wallEndsMode='none';calcOpenings=[];
+  current=type;beams=[];beamCounter=0;lastResult=null;sides=[];sideCounter=0;calcMode='dims';wallEndsMode='none';calcOpenings=[];rebarItems=[];rebarOpen=false;rebarCounter=0;rebarSaveMode=false;
   document.querySelectorAll('.type-card').forEach(b=>b.classList.remove('active'));
   document.getElementById('btn-'+type).classList.add('active');
   renderPanel();document.getElementById('result-container').innerHTML='';
@@ -1428,7 +1452,190 @@ function setWallEnds(mode){
   });
 }
 
+// ── REBAR ──
+let rebarItems=[], rebarOpen=false, rebarCounter=0, rebarSaveMode=false;
+const REBAR_CLASSES=['А240','А500С','А500СП','Ат500С','А600','А800'];
+const REBAR_DIAMS=[6,8,10,12,14,16,18,20,22,25,28,32,36,40];
+
+function rebarRowHTML(item){
+  const id=item.id;
+  const kOpts=REBAR_CLASSES.map(k=>'<option value="'+k+'"'+(k===item.klass?' selected':'')+'>'+k+'</option>').join('');
+  const dOpts=REBAR_DIAMS.map(d=>'<option value="'+d+'"'+(d===item.diam?' selected':'')+'>Ø'+d+' мм</option>').join('');
+  return '<div id="rebar-row-'+id+'" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--separator)">'
+    +'<select onchange="updateRebarItem('+id+',\'klass\',this.value)" style="flex:1;padding:8px 6px;border-radius:8px;border:1.5px solid var(--separator);background:var(--surface);font-family:inherit;font-size:13px;color:var(--label);outline:none">'+kOpts+'</select>'
+    +'<select onchange="updateRebarItem('+id+',\'diam\',parseInt(this.value))" style="flex:1;padding:8px 6px;border-radius:8px;border:1.5px solid var(--separator);background:var(--surface);font-family:inherit;font-size:13px;color:var(--label);outline:none">'+dOpts+'</select>'
+    +'<div style="display:flex;align-items:center;border:1.5px solid var(--separator);border-radius:8px;overflow:hidden;width:100px;flex-shrink:0">'
+    +'<input type="number" value="'+(item.kg||'')+'" placeholder="0" min="0" onblur="updateRebarItem('+id+',\'kg\',parseFloat(this.value)||0)" style="flex:1;border:none;outline:none;background:transparent;font-family:inherit;font-size:16px;color:var(--label);padding:7px 6px;text-align:right;min-width:0">'
+    +'<span style="padding:7px 6px;font-size:11px;color:var(--label2);background:var(--bg3);border-left:1px solid var(--separator)">кг</span>'
+    +'</div>'
+    +'<button onclick="removeRebarItem('+id+')" style="background:var(--red-light);border:none;border-radius:7px;color:var(--red);width:28px;height:28px;cursor:pointer;flex-shrink:0;font-size:16px">×</button>'
+    +'</div>';
+}
+
+function rebarSectionHTML(){
+  const totalKg=rebarItems.reduce((s,r)=>s+(r.kg||0),0);
+  const wireKg=totalKg>0?+(totalKg*0.012).toFixed(1):0;
+  const subtitle=totalKg>0?totalKg.toFixed(1)+' кг · проволока '+wireKg+' кг':'Не указана';
+  const colHdr='<div style="display:flex;align-items:center;gap:8px;padding:8px 14px 6px;border-bottom:1px solid var(--separator);background:var(--bg2)">'
+    +'<span style="font-size:11px;font-weight:700;color:var(--label2);flex:1;text-transform:uppercase;letter-spacing:0.4px">Марка</span>'
+    +'<span style="font-size:11px;font-weight:700;color:var(--label2);flex:1;text-transform:uppercase;letter-spacing:0.4px">Диаметр</span>'
+    +'<span style="font-size:11px;font-weight:700;color:var(--label2);width:100px;flex-shrink:0;text-align:right;padding-right:36px;text-transform:uppercase;letter-spacing:0.4px">Кг</span>'
+    +'</div>';
+  const rows=rebarItems.map(r=>rebarRowHTML(r)).join('');
+  const totals=totalKg>0?'<div style="padding:10px 14px;border-top:1.5px solid var(--separator)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+    +'<span style="font-size:13px;font-weight:700;color:var(--label)">Итого арматура</span>'
+    +'<span style="font-size:16px;font-weight:700;color:var(--accent)" id="rebar-total-display">'+totalKg.toFixed(1)+' кг</span>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center">'
+    +'<span style="font-size:13px;color:var(--label2)">Вязальная проволока (~1.2%)</span>'
+    +'<span style="font-size:14px;font-weight:600;color:var(--label)" id="rebar-wire-display">'+wireKg+' кг</span>'
+    +'</div></div>':'';
+  return '<div class="rebar-section" id="rebar-section">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;cursor:pointer" onclick="toggleRebarSection()">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<div class="rebar-header-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="2" y1="17" x2="22" y2="17"/></svg></div>'
+    +'<div><div class="rebar-title">Арматура</div>'
+    +'<div style="font-size:11px;color:var(--label2);margin-top:1px" id="rebar-subtitle">'+subtitle+'</div></div></div>'
+    +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" id="rebar-chevron" style="transform:rotate('+(rebarOpen?'90':'0')+'deg);transition:transform 0.2s;color:var(--label2)"><polyline points="9,18 15,12 9,6"/></svg>'
+    +'</div>'
+    +'<div id="rebar-body" style="display:'+(rebarOpen?'block':'none')+'">'
+    +(rebarItems.length>0?colHdr+rows:'<div style="padding:12px 16px;font-size:13px;color:var(--label2)">Арматура не добавлена</div>')
+    +totals
+    +'<div style="padding:10px 14px"><button onclick="addRebarRow()" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--accent);border-radius:9px;color:var(--accent);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">+ Добавить арматуру</button></div>'
+    +'</div></div>';
+}
+
+function toggleRebarSection(){
+  rebarOpen=!rebarOpen;
+  const b=document.getElementById('rebar-body'),ch=document.getElementById('rebar-chevron');
+  if(b)b.style.display=rebarOpen?'block':'none';
+  if(ch)ch.style.transform=rebarOpen?'rotate(90deg)':'rotate(0deg)';
+}
+function addRebarRow(){
+  rebarCounter++;rebarItems.push({id:rebarCounter,klass:'А500С',diam:16,kg:0});
+  refreshRebarSection();rebarOpen=true;
+}
+function addRebarRowInline(){
+  rebarCounter++;rebarItems.push({id:rebarCounter,klass:'А500С',diam:16,kg:0});
+  refreshRebarInline();
+}
+function removeRebarItem(id){
+  rebarItems=rebarItems.filter(r=>r.id!==id);
+  if(current==='rebar')refreshRebarInline();else refreshRebarSection();
+}
+function updateRebarItem(id,field,val){
+  const item=rebarItems.find(r=>r.id===id);
+  if(!item)return;
+  item[field]=val;
+  if(current==='rebar')refreshRebarTotals();else updateRebarTotals();
+}
+function refreshRebarSection(){
+  const sec=document.getElementById('rebar-section');
+  if(sec){const d=document.createElement('div');d.innerHTML=rebarSectionHTML();sec.replaceWith(d.firstChild);}
+}
+function refreshRebarInline(){
+  const c=document.getElementById('rebar-inline-list');if(!c)return;
+  const colHdr='<div style="display:flex;align-items:center;gap:8px;padding:8px 14px 6px;border-bottom:1px solid var(--separator);background:var(--bg2)">'
+    +'<span style="font-size:11px;font-weight:700;color:var(--label2);flex:1;text-transform:uppercase;letter-spacing:0.4px">Марка</span>'
+    +'<span style="font-size:11px;font-weight:700;color:var(--label2);flex:1;text-transform:uppercase;letter-spacing:0.4px">Диаметр</span>'
+    +'<span style="font-size:11px;font-weight:700;color:var(--label2);width:100px;flex-shrink:0;text-align:right;padding-right:36px;text-transform:uppercase;letter-spacing:0.4px">Кг</span>'
+    +'</div>';
+  const rows=rebarItems.map(r=>rebarRowHTML(r)).join('');
+  c.innerHTML='<div class="card" style="overflow:hidden;margin-bottom:8px">'
+    +(rebarItems.length>0?colHdr+rows:'')
+    +'<div style="padding:10px 14px"><button onclick="addRebarRowInline()" style="width:100%;padding:11px;background:none;border:1.5px dashed var(--accent);border-radius:9px;color:var(--accent);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">+ Добавить арматуру</button></div>'
+    +'</div>';
+  refreshRebarTotals();
+}
+function refreshRebarTotals(){
+  const totalKg=rebarItems.reduce((s,r)=>s+(r.kg||0),0);
+  const wireKg=+(totalKg*0.012).toFixed(1);
+  const td=document.getElementById('rebar-total-display'),wd=document.getElementById('rebar-wire-display'),sub=document.getElementById('rebar-subtitle');
+  if(td)td.textContent=totalKg.toFixed(1)+' кг';
+  if(wd)wd.textContent=wireKg+' кг';
+  if(sub)sub.textContent=totalKg>0?totalKg.toFixed(1)+' кг · проволока '+wireKg+' кг':'Не указана';
+}
+function updateRebarTotals(){refreshRebarTotals();}
+function getRebarResult(){
+  const items=rebarItems.filter(r=>r.kg>0);if(!items.length)return null;
+  const totalKg=items.reduce((s,r)=>s+r.kg,0);
+  return{items:items.map(r=>({...r})),totalKg,wireKg:+(totalKg*0.012).toFixed(1)};
+}
+function toggleRebarSaveMode(){
+  rebarSaveMode=!rebarSaveMode;
+  const sw=document.getElementById('rebar-save-switch');
+  const panel=document.getElementById('rebar-save-panel');
+  const btn=document.getElementById('rebar-calc-btn');
+  if(sw)sw.classList.toggle('on',rebarSaveMode);
+  if(panel)panel.style.display=rebarSaveMode?'block':'none';
+  if(btn)btn.textContent=rebarSaveMode?'Рассчитать и сохранить':'Рассчитать';
+}
+function calcRebarOnly(){
+  const rb=getRebarResult();
+  if(!rb){showToast('⚠ Добавьте арматуру');return;}
+  haptic('medium');
+  const anchor=document.getElementById('rebar-hero-anchor');
+  if(anchor){
+    anchor.innerHTML='<div class="result-card-top"><div class="result-hero">'
+      +'<div class="result-hero-label" style="font-size:14px;font-weight:700;opacity:1;margin-bottom:10px">Арматура</div>'
+      +'<div style="display:flex;gap:20px;align-items:flex-end">'
+      +'<div><div style="font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Итого</div>'
+      +'<div><span style="font-size:46px;font-weight:700;letter-spacing:-2px;line-height:1;color:#fff">'+rb.totalKg.toFixed(1)+'</span><span style="font-size:20px;opacity:0.8;margin-left:4px">кг</span></div></div>'
+      +'<div><div style="font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Проволока</div>'
+      +'<div><span style="font-size:26px;font-weight:600;color:rgba(255,255,255,0.85)">'+rb.wireKg+'</span><span style="font-size:14px;opacity:0.7;margin-left:3px">кг</span></div></div>'
+      +'</div></div></div>';
+  }
+  const bottom=document.getElementById('rebar-bottom-anchor');
+  if(bottom){
+    bottom.innerHTML='<div class="result-card-bottom">'
+      +rb.items.map(r=>'<div style="display:flex;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--separator)">'
+        +'<span style="font-size:13px;font-weight:600;color:var(--label)">'+r.klass+' Ø'+r.diam+' мм</span>'
+        +'<span style="font-size:14px;font-weight:700;color:var(--accent)">'+r.kg.toFixed(1)+' кг</span>'
+        +'</div>').join('')
+      +'</div>';
+  }
+  const namedItems=rb.items.map(r=>({...r,name:'Горячекатанная арматурная сталь '+r.klass+', диаметром '+r.diam+' мм'}));
+  lastResult={typeName:'Арматура',typeKey:'rebar',formwork:0,concVol:0,
+    rebar:{...rb,items:namedItems},rebarKg:rb.totalKg,wireKg:rb.wireKg,qty:1,
+    params:namedItems.map(r=>({label:r.name,value:r.kg.toFixed(1)+' кг'})).concat([{label:'Вязальная проволока',value:rb.wireKg+' кг'}])
+  };
+  if(rebarSaveMode)doSave('rebar-save');
+  anchor?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+
 function renderPanel(){
+  if(current==='rebar'){
+    const p=document.getElementById('calc-panel');
+    const savePanelHtml=buildSavePanel('rebar-save');
+    const colHdr='<div style="display:flex;align-items:center;gap:8px;padding:8px 14px 6px;border-bottom:1px solid var(--separator);background:var(--bg2)">'
+      +'<span style="font-size:11px;font-weight:700;color:var(--label2);flex:1;text-transform:uppercase;letter-spacing:0.4px">Марка</span>'
+      +'<span style="font-size:11px;font-weight:700;color:var(--label2);flex:1;text-transform:uppercase;letter-spacing:0.4px">Диаметр</span>'
+      +'<span style="font-size:11px;font-weight:700;color:var(--label2);width:100px;flex-shrink:0;text-align:right;padding-right:36px;text-transform:uppercase;letter-spacing:0.4px">Кг</span>'
+      +'</div>';
+    const rows=rebarItems.map(r=>rebarRowHTML(r)).join('');
+    const inlineList='<div class="card" style="overflow:hidden;margin-bottom:8px">'
+      +(rebarItems.length>0?colHdr+rows:'')
+      +'<div style="padding:10px 14px"><button onclick="addRebarRowInline()" style="width:100%;padding:11px;background:none;border:1.5px dashed var(--accent);border-radius:9px;color:var(--accent);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">+ Добавить арматуру</button></div>'
+      +'</div>';
+    p.innerHTML='<div class="section">'
+      +'<div class="section-header">СПЕЦИФИКАЦИЯ АРМАТУРЫ</div>'
+      +'<div id="rebar-hero-anchor"></div>'
+      +'<div id="rebar-bottom-anchor"></div>'
+      +'<div id="rebar-inline-list">'+inlineList+'</div>'
+      +'<button class="cta-btn" id="rebar-calc-btn" style="margin-top:8px;margin-bottom:0" onclick="calcRebarOnly()">Рассчитать</button>'
+      +'<div style="margin-top:16px">'
+      +'<div class="ios-toggle-row" onclick="toggleRebarSaveMode()">'
+      +'<div><div class="ios-toggle-label">Сохранить в журнал</div>'
+      +'<div class="ios-toggle-sub">Здание и отметка</div></div>'
+      +'<div class="ios-switch" id="rebar-save-switch"></div>'
+      +'</div>'
+      +'<div id="rebar-save-panel" style="display:none">'+savePanelHtml+'</div>'
+      +'</div>'
+      +'</div>';
+    return;
+  }
   const t=TYPES[current],p=document.getElementById('calc-panel');
   const isStair=current==='stair';
   const modeCols=isStair?2:3;
@@ -1600,6 +1807,8 @@ function renderPanel(){
         </div>
         <div id="calc-openings-list" style="display:none;margin-bottom:14px;box-sizing:border-box;width:100%;overflow:hidden"></div>
       </div>`:''}
+
+      ${['wall','slab','cover','foundation','beam','stair'].includes(current)?rebarSectionHTML():''}
 
       <!-- Save to journal toggle -->
       <div class="ios-toggle-row" onclick="toggleSaveMode()">
@@ -1910,6 +2119,7 @@ function showResult(res,details,bF,bV,gF,gV,qty,_hasBeams,header,rc){
     const heroNote=document.querySelector('#result-hero-anchor .result-hero-note');
     if(heroNote&&lastResult){const base=lastResult.formwork+totalOF;heroNote.textContent='−'+totalOF.toFixed(2)+' м² проёмы · бетон '+lastResult.concVol.toFixed(3)+' м³';}
   }
+  if(lastResult){const rb=getRebarResult();if(rb){lastResult.rebar=rb;lastResult.rebarKg=rb.totalKg;lastResult.wireKg=rb.wireKg;}}
   if(saveMode) autoSaveToJournal();
 }
 
@@ -1959,8 +2169,7 @@ function buildSavePanel(pid){
         <button onclick="toggleNewMark('${pid}')" style="background:none;border:none;color:var(--blue);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;padding:6px 0">+ Новая отметка</button>
       </div>
       <div>
-        <div class="sp-label">Бетон (необязательно)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+${pid!=='rebar-save'?`<div class="sp-label">Бетон (необязательно)</div>        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div>
             <div style="font-size:11px;color:var(--label2);margin-bottom:4px">Класс</div>
             <select id="sp-class-${pid}" style="width:100%;padding:10px 10px;border-radius:10px;border:1.5px solid var(--separator);background:var(--surface);font-family:inherit;font-size:14px;color:var(--label);outline:none">
@@ -1979,6 +2188,7 @@ function buildSavePanel(pid){
               <option>W8</option><option>W10</option><option>W12</option>
             </select>
           </div>
+
           <div>
             <div style="font-size:11px;color:var(--label2);margin-bottom:4px">Морозостойкость</div>
             <select id="sp-frost-${pid}" style="width:100%;padding:10px 10px;border-radius:10px;border:1.5px solid var(--separator);background:var(--surface);font-family:inherit;font-size:14px;color:var(--label);outline:none">
@@ -1998,9 +2208,10 @@ function buildSavePanel(pid){
               <option>М550</option><option>М600</option>
             </select>
           </div>
-        </div>
+        </div>`:''}
+
       </div>
-      <button class="cta-btn green" id="sp-save-btn-${pid}" onclick="popBtn(this);haptic('medium');doSave('${pid}')">Сохранить</button>
+${pid!=='rebar-save'?`<button class="cta-btn green" id="sp-save-btn-${pid}" onclick="popBtn(this);haptic('medium');doSave('${pid}')">Сохранить</button>`:''}
     </div>
   </div>`;
 }
@@ -2066,10 +2277,10 @@ function doSave(pid){
   if(!st.mark){showToast('⚠ Укажите отметку');return;}
   let result=null;
   if(pid==='calc-save'){if(!lastResult){showToast('⚠ Сначала выполните расчёт');return;}result={...lastResult};}
-  if(!result)return;
+  if(!result){if(pid==='rebar-save'&&lastResult){result={...lastResult};}else return;}
 
   const b=db.buildings.find(x=>x.id==st.building);if(!b)return;
-  b.entries.push({id:Date.now()+''+Math.floor(Math.random()*9999),mark:st.mark,type:result.typeName,typeKey:result.typeKey||current,formwork:result.formwork,concVol:result.concVol,qty:result.qty||1,params:result.params||null,formula:result.formula||null,concreteClass:document.getElementById('sp-class-'+pid)?.value||null,water:document.getElementById('sp-water-'+pid)?.value||null,frost:document.getElementById('sp-frost-'+pid)?.value||null,grade:document.getElementById('sp-grade-'+pid)?.value||null,date:new Date().toLocaleDateString('ru-RU')});
+  b.entries.push({id:Date.now()+''+Math.floor(Math.random()*9999),mark:st.mark,type:result.typeName,typeKey:result.typeKey||current,formwork:result.formwork,concVol:result.concVol,qty:result.qty||1,params:result.params||null,formula:result.formula||null,concreteClass:document.getElementById('sp-class-'+pid)?.value||null,water:document.getElementById('sp-water-'+pid)?.value||null,frost:document.getElementById('sp-frost-'+pid)?.value||null,grade:document.getElementById('sp-grade-'+pid)?.value||null,rebar:result.rebar||null,rebarKg:result.rebarKg||0,wireKg:result.wireKg||0,date:new Date().toLocaleDateString('ru-RU')});
   saveDB();
   const btn=document.getElementById('sp-save-btn-'+pid);
   if(btn){
@@ -2529,9 +2740,15 @@ function renderJournal(keepState){
   }
   list.innerHTML=db.buildings.map(b=>{
     const entries=b.entries.filter(e=>!e.isPlaceholder);
-    const tF=entries.reduce((s,e)=>s+getEntryFormwork(e),0),tV=entries.reduce((s,e)=>s+e.concVol,0);
-    const byType={};entries.forEach(e=>{if(!byType[e.type])byType[e.type]={f:0,v:0};byType[e.type].f+=getEntryFormwork(e);byType[e.type].v+=e.concVol;});
-    const typeSum=Object.entries(byType).map(([tp,v])=>`<div class="ts-row"><span class="ts-name">${tp}</span><div class="ts-vals"><span class="ts-val form">${v.f.toFixed(1)} м²</span><span class="ts-val conc">${v.v.toFixed(1)} м³</span></div></div>`).join('');
+    const tF=entries.reduce((s,e)=>s+getEntryFormwork(e),0),tV=entries.reduce((s,e)=>s+e.concVol,0),tRebKg=entries.reduce((s,e)=>s+(e.rebarKg||0),0);
+    const byType={};entries.forEach(e=>{if(!byType[e.type])byType[e.type]={f:0,v:0,kg:0,isRebar:e.typeKey==='rebar'};byType[e.type].f+=getEntryFormwork(e);byType[e.type].v+=e.concVol;byType[e.type].kg+=(e.rebarKg||0);});
+    const typeSum=Object.entries(byType).map(([tp,v])=>{
+      if(v.isRebar){
+        const t=(v.kg/1000).toFixed(3);
+        return `<div class="ts-row"><span class="ts-name">${tp}</span><div class="ts-vals"><span class="ts-val conc">${t} т</span></div></div>`;
+      }
+      return `<div class="ts-row"><span class="ts-name">${tp}</span><div class="ts-vals"><span class="ts-val form">${v.f.toFixed(1)} м²</span><span class="ts-val conc">${v.v.toFixed(1)} м³</span></div></div>`;
+    }).join('');
 
     // Sort marks
     const byMark={};b.entries.forEach(e=>{const m=e.mark||'—';if(!byMark[m])byMark[m]=[];byMark[m].push(e);});
@@ -2542,6 +2759,7 @@ function renderJournal(keepState){
       const realEntries=mEntries.filter(e=>!e.isPlaceholder);
       const mF=realEntries.reduce((s,e)=>s+getEntryFormwork(e),0);
       const mV=realEntries.reduce((s,e)=>s+e.concVol,0);
+      const mRebKg=realEntries.reduce((s,e)=>s+(e.rebarKg||0),0);
       const markByType={};realEntries.forEach(e=>{if(!markByType[e.type])markByType[e.type]=[];markByType[e.type].push(e);});
       const mgid=`${b.id}-${mi}`;
 
@@ -2592,8 +2810,10 @@ function renderJournal(keepState){
                   <div class="entry-name">${e.customName||tp+' №'+(idx+1)}${e.qty>1?' × '+e.qty+' шт.':''}</div>
                   <div class="entry-date">${e.date}</div>
                   <div class="entry-vals">
-                    <span class="entry-val form">${getEntryFormwork(e).toFixed(2)} м²</span>
-                    <span class="entry-val conc">${e.concVol.toFixed(2)} м³</span>
+                    ${e.typeKey==='rebar'
+                      ?`<span class="entry-val" style="background:rgba(245,158,11,0.12);color:#D97706">${((e.rebarKg||0)/1000).toFixed(3)} т</span>`
+                      :`<span class="entry-val form">${getEntryFormwork(e).toFixed(2)} м²</span>
+                    <span class="entry-val conc">${e.concVol.toFixed(2)} м³</span>`}
                     ${e.concreteClass?`<span class="entry-val" style="background:rgba(10,132,255,0.12);color:var(--blue)">${e.concreteClass}</span>`:''}
                     ${e.water?`<span class="entry-val" style="background:rgba(48,209,88,0.12);color:var(--green)">${e.water}</span>`:''}
                     ${e.frost?`<span class="entry-val" style="background:rgba(90,200,250,0.12);color:var(--teal)">${e.frost}</span>`:''}
@@ -2622,7 +2842,7 @@ function renderJournal(keepState){
           <div class="mark-dot"></div>
           <div style="flex:1;min-width:0">
             <div class="mark-label">Отм. ${mark}</div>
-            <div style="font-size:12px;color:var(--label2);margin-top:1px">${realEntries.length} эл. · ${mF.toFixed(1)} м² · ${mV.toFixed(1)} м³</div>
+            <div style="font-size:12px;color:var(--label2);margin-top:1px">${realEntries.length} эл. · ${mF.toFixed(1)} м²${mV>0?' · '+mV.toFixed(1)+' м³':''}${mRebKg>0?' · '+(mRebKg/1000).toFixed(3)+' т':''}</div>
           </div>
           <button style="background:none;border:none;color:var(--label3);font-size:16px;cursor:pointer;padding:4px 8px;flex-shrink:0" onclick="event.stopPropagation();renameMark(${b.id},'${mark.replace(/'/g,"\\'")}')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
           <span class="mark-chevron" id="mchev-${mgid}">›</span>
@@ -2661,10 +2881,18 @@ function renderGrandSummary(){
   const c=document.getElementById('grand-summary-container');
   const all=db.buildings.flatMap(b=>b.entries.filter(e=>!e.isPlaceholder));
   if(all.length===0){c.innerHTML='';return;}
-  const byType={};all.forEach(e=>{if(!byType[e.type])byType[e.type]={f:0,v:0};byType[e.type].f+=getEntryFormwork(e);byType[e.type].v+=e.concVol;});
+  const byType={};all.forEach(e=>{
+    if(!byType[e.type])byType[e.type]={f:0,v:0,kg:0,isRebar:e.typeKey==='rebar'};
+    byType[e.type].f+=getEntryFormwork(e);byType[e.type].v+=e.concVol;byType[e.type].kg+=(e.rebarKg||0);
+  });
   c.innerHTML=`<div class="grand-card">
     <div class="gc-title">Итог по всем зданиям</div>
-    <div class="gc-rows">${Object.entries(byType).map(([tp,v])=>`<div class="gc-row"><span class="gc-type">${tp}</span><div class="gc-vals"><span class="gc-val form">${v.f.toFixed(2)} м²</span><span class="gc-val conc">${v.v.toFixed(2)} м³</span></div></div>`).join('')}</div>
+    <div class="gc-rows">${Object.entries(byType).map(([tp,v])=>{
+      if(v.isRebar){
+        return `<div class="gc-row"><span class="gc-type">${tp}</span><div class="gc-vals"><span class="gc-val" style="color:#D97706">${(v.kg/1000).toFixed(3)} т</span></div></div>`;
+      }
+      return `<div class="gc-row"><span class="gc-type">${tp}</span><div class="gc-vals"><span class="gc-val form">${v.f.toFixed(2)} м²</span><span class="gc-val conc">${v.v.toFixed(2)} м³</span></div></div>`;
+    }).join('')}</div>
   </div>`;
 }
 
@@ -3123,7 +3351,7 @@ function renderVOR(bId){
   }
 
   const state=_vorState[bId];
-  const entries=b.entries.filter(e=>!e.isPlaceholder&&(getEntryFormwork(e)>0||e.concVol>0));
+  const entries=b.entries.filter(e=>!e.isPlaceholder&&(getEntryFormwork(e)>0||e.concVol>0||e.rebarKg>0));
 
   const allMarks=[...new Set(entries.map(e=>e.mark).filter(Boolean))]
     .sort((a,z)=>{const na=parseFloat(a),nb=parseFloat(z);return(!isNaN(na)&&!isNaN(nb))?na-nb:a.localeCompare(z);});
@@ -3136,7 +3364,7 @@ function renderVOR(bId){
     font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s">${label}</button>`;
 
   const allTypes=[...new Set(entries.map(e=>e.typeKey).filter(Boolean))];
-  const typeLabels={wall:'Стены',slab:'Перекрытия',cover:'Покрытия',foundation:'Фундамент',beam:'Балки',stair:'Лестницы'};
+  const typeLabels={wall:'Стены',slab:'Перекрытия',cover:'Покрытия',foundation:'Фундамент',beam:'Балки',stair:'Лестницы',rebar:'Армирование'};
 
   const groupsHTML=state.markGroups.map((g,gi)=>{
     if(!g.types)g.types=[...allTypes];
@@ -3235,10 +3463,8 @@ function buildVOR(bId){
   const b=db.buildings.find(b=>String(b.id)===String(bId));
   if(!b)return;
   const state=_vorState[bId];if(!state)return;
-
-  const entries=b.entries.filter(e=>!e.isPlaceholder&&(getEntryFormwork(e)>0||e.concVol>0));
+  const entries=b.entries.filter(e=>!e.isPlaceholder&&(getEntryFormwork(e)>0||e.concVol>0||e.rebarKg>0));
   const thickLabels=['Толщина стены','Толщина плиты','Толщина'];
-
   const workNames={
     wall:  {c:(t,cc)=>`Устройство монолитных ж/б стен${t?', толщ. '+t+' мм':''}${cc?', '+cc:''}`,f:()=>'Установка и разборка опалубки стен'},
     slab:  {c:(t,cc)=>`Устройство монолитных ж/б перекрытий${t?', толщ. '+t+' мм':''}${cc?', '+cc:''}`,f:()=>'Установка и разборка опалубки перекрытий'},
@@ -3247,8 +3473,8 @@ function buildVOR(bId){
     beam:  {c:(t,cc)=>`Устройство монолитных ж/б балок${cc?', '+cc:''}`,f:()=>'Установка и разборка опалубки балок'},
     stair: {c:(t,cc)=>`Устройство монолитных ж/б лестниц${cc?', '+cc:''}`,f:()=>'Установка и разборка опалубки лестниц'},
   };
-  const typeOrder=['foundation','wall','slab','cover','beam','stair'];
-  let html='';let grandFW=0,grandVol=0;let rowUID=0;
+  const typeOrder=['foundation','wall','slab','cover','beam','stair','rebar'];
+  let html='';let grandFW=0,grandVol=0,grandRebKg=0;let rowUID=0;
 
   state.markGroups.forEach(group=>{
     const groupTypes=group.types&&group.types.length>0?group.types:null;
@@ -3257,11 +3483,12 @@ function buildVOR(bId){
       (!groupTypes||groupTypes.includes(e.typeKey))
     );
     if(!groupEntries.length)return;
-
     const groupName=group.name||`Отм. ${group.marks.join(', ')}`;
     const groupFW=groupEntries.reduce((s,e)=>s+getEntryFormwork(e),0);
     const groupVol=groupEntries.reduce((s,e)=>s+e.concVol,0);
-    grandFW+=groupFW;grandVol+=groupVol;
+    const groupRebKg=groupEntries.reduce((s,e)=>s+(e.rebarKg||0)+(e.rebar?.items||[]).reduce((ss,r)=>ss+(r.kg||0),0),0);
+    grandFW+=groupFW;grandVol+=groupVol;grandRebKg+=groupRebKg;
+    const groupWireKg=+(groupRebKg*0.012).toFixed(1);
 
     const byType={};
     groupEntries.forEach(e=>{const tk=e.typeKey||'wall';if(!byType[tk])byType[tk]=[];byType[tk].push(e);});
@@ -3270,8 +3497,7 @@ function buildVOR(bId){
     let rowsHtml='';
 
     sortedTypes.forEach(tk=>{
-      const def=workNames[tk];if(!def)return;
-      // Subgroup by thickness + concrete
+      const def=workNames[tk];
       const subs={};
       byType[tk].forEach(e=>{
         const tp=(e.params||[]).find(p=>thickLabels.includes(p.label));
@@ -3285,45 +3511,68 @@ function buildVOR(bId){
       Object.values(subs).sort((a,z)=>a.thick-z.thick).forEach(sg=>{
         const sgFW=sg.items.reduce((s,e)=>s+getEntryFormwork(e),0);
         const sgVol=sg.items.reduce((s,e)=>s+e.concVol,0);
+        const fwParts=sg.items.map(e=>{const fw=getEntryFormwork(e);const qty=e.qty||1;const per=fw/qty;return qty>1?qty+'×'+per.toFixed(2):per.toFixed(2);});
+        const volParts=sg.items.map(e=>{const v=e.concVol;const qty=e.qty||1;return qty>1?qty+'×'+(v/qty).toFixed(3):v.toFixed(3);});
+        const fwStr=fwParts.join('+')+' = '+sgFW.toFixed(2);
+        const volStr=volParts.join('+')+' = '+sgVol.toFixed(3);
+        const thickStr=sg.thick?sg.thick+' мм':'';
+        const pairStyle='border-left:3px solid var(--teal);margin-left:14px;padding-left:10px;margin-bottom:12px;margin-top:12px';
+        const uid=rowUID++;
 
-        const fwParts=sg.items.map(e=>{
-          const fw=getEntryFormwork(e);const qty=e.qty||1;
-          const per=fw/qty;
-          return qty>1?`${qty}×${per.toFixed(2)}`:per.toFixed(2);
-        });
-        const volParts=sg.items.map(e=>{
-          const v=e.concVol;const qty=e.qty||1;
-          return qty>1?`${qty}×${(v/qty).toFixed(3)}`:v.toFixed(3);
-        });
-
-        const fwStr=fwParts.join('+')+` = ${sgFW.toFixed(2)}`;
-        const volStr=volParts.join('+')+` = ${sgVol.toFixed(3)}`;
-        const thickStr=sg.thick?String(sg.thick).replace(/\s*мм$/i,'')+' мм':'';
-
-        // Detail rows (expandable)
+        // Detail rows for expand
         const detailRows=sg.items.map(e=>{
-          const typeN={wall:'Стена',slab:'Перекрытие',cover:'Покрытие',foundation:'Фундамент',beam:'Балка',stair:'Лестница'}[e.typeKey]||e.type;
+          const typeN={wall:'Стена',slab:'Перекрытие',cover:'Покрытие',foundation:'Фундамент',beam:'Балка',stair:'Лестница',rebar:'Арматура'}[e.typeKey]||e.type;
           const params=(e.params||[]).slice(0,4).map(p=>`${p.label}: ${p.value}`).join(' · ');
           return`<div style="padding:7px 12px;border-bottom:1px solid var(--separator);display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
             <div style="flex:1;min-width:0">
               <div style="font-size:12px;font-weight:600;color:var(--label)">${e.customName||typeN}${e.qty>1?' ×'+e.qty:''} · отм. ${e.mark}</div>
               ${params?`<div style="font-size:11px;color:var(--label2);margin-top:1px">${params}</div>`:''}
-              ${e.formula?('<div style="font-size:11px;color:var(--blue);margin-top:2px;line-height:1.4">'+e.formula.split('\n').join(' → ')+'</div>'):''}
             </div>
             <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:12px;font-weight:600;color:var(--accent)">${getEntryFormwork(e).toFixed(2)} м²</div>
-              <div style="font-size:11px;color:var(--green)">${e.concVol.toFixed(3)} м³</div>
+              ${getEntryFormwork(e)>0?`<div style="font-size:12px;font-weight:600;color:var(--accent)">${getEntryFormwork(e).toFixed(2)} м²</div>`:''}
+              ${e.concVol>0?`<div style="font-size:11px;color:var(--green)">${e.concVol.toFixed(3)} м³</div>`:''}
+              ${e.rebarKg>0?`<div style="font-size:11px;color:var(--orange,#F59E0B)">${(e.rebarKg/1000).toFixed(3)} т</div>`:''}
             </div>
           </div>`;
         }).join('');
 
-        const uid=rowUID++;
-        // Two rows (concrete + formwork) visually paired with left accent line
-        const pairStyle='border-left:3px solid var(--teal);margin-left:14px;padding-left:10px;margin-bottom:12px;margin-top:12px';
-        const uid2=rowUID++;
+        // Collect rebar items for this subgroup
+        const rebarRows=[];
+        if(tk!=='rebar'){
+          // Rebar attached to concrete elements
+          sg.items.forEach(e=>{
+            if(!e.rebar?.items?.length)return;
+            e.rebar.items.forEach(r=>{
+              if(!r.kg)return;
+              const name=`Горячекатанная арматурная сталь класса ${r.klass}, диаметром ${r.diam} мм`;
+              const existing=rebarRows.find(x=>x.name===name);
+              if(existing)existing.kg+=r.kg;
+              else rebarRows.push({name,kg:r.kg});
+            });
+          });
+        }
+
         rowsHtml+=`<div style="border-bottom:2px solid var(--separator);padding-bottom:10px">
           <div style="${pairStyle}">
-            ${sgVol>0?`<div style="display:flex;align-items:baseline;justify-content:space-between;padding:6px 0">
+            ${tk==='rebar'?(()=>{
+              // Standalone rebar entries
+              const allRebarItems=[];
+              sg.items.forEach(e=>{
+                (e.params||[]).filter(p=>p.label&&p.label.startsWith('Горячекатанная')).forEach(p=>{
+                  const existing=allRebarItems.find(x=>x.label===p.label);
+                  if(existing)existing.kg+=parseFloat(p.value)||0;
+                  else allRebarItems.push({label:p.label,kg:parseFloat(p.value)||0});
+                });
+              });
+              return allRebarItems.map(r=>`<div style="display:flex;align-items:baseline;justify-content:space-between;padding:6px 0">
+                <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--label);margin-bottom:2px">${r.label}</div></div>
+                <div style="text-align:right;flex-shrink:0;margin-left:10px">
+                  <span style="font-size:17px;font-weight:700;color:var(--green)">${(r.kg/1000).toFixed(3)}</span>
+                  <span style="font-size:11px;color:var(--label2)"> т</span>
+                </div>
+              </div>`).join('');
+            })():''}
+            ${tk!=='rebar'&&sgVol>0?`<div style="display:flex;align-items:baseline;justify-content:space-between;padding:6px 0">
               <div style="flex:1;min-width:0">
                 <div style="font-size:12px;font-weight:600;color:var(--label);margin-bottom:2px">${def.c(thickStr,sg.cc)}</div>
                 <div style="font-size:10px;color:var(--green);font-variant-numeric:tabular-nums;line-height:1.5;word-break:break-all">${volStr}</div>
@@ -3333,8 +3582,8 @@ function buildVOR(bId){
                 <span style="font-size:11px;color:var(--label2)"> м³</span>
               </div>
             </div>`:''}
-            ${sgVol>0&&sgFW>0?`<div style="height:1px;background:var(--separator);margin:2px 0"></div>`:''}
-            ${sgFW>0?`<div style="display:flex;align-items:baseline;justify-content:space-between;padding:6px 0">
+            ${tk!=='rebar'&&sgVol>0&&sgFW>0?`<div style="height:1px;background:var(--separator);margin:2px 0"></div>`:''}
+            ${tk!=='rebar'&&sgFW>0?`<div style="display:flex;align-items:baseline;justify-content:space-between;padding:6px 0">
               <div style="flex:1;min-width:0">
                 <div style="font-size:12px;font-weight:600;color:var(--label);margin-bottom:2px">${def.f()}</div>
                 <div style="font-size:10px;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1.5;word-break:break-all">${fwStr}</div>
@@ -3344,6 +3593,14 @@ function buildVOR(bId){
                 <span style="font-size:11px;color:var(--label2)"> м²</span>
               </div>
             </div>`:''}
+            ${rebarRows.map(r=>`<div style="height:1px;background:var(--separator);margin:2px 0"></div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;padding:6px 0">
+              <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--label);margin-bottom:2px">${r.name}</div></div>
+              <div style="text-align:right;flex-shrink:0;margin-left:10px">
+                <span style="font-size:17px;font-weight:700;color:var(--green)">${(r.kg/1000).toFixed(3)}</span>
+                <span style="font-size:11px;color:var(--label2)"> т</span>
+              </div>
+            </div>`).join('')}
           </div>
           <div style="padding:0 14px;display:flex;justify-content:flex-end">
             <button id="vor-btn-${uid}" onclick="toggleVorRow('${uid}')" style="background:none;border:none;color:var(--blue);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:0">Раскрыть ▼</button>
@@ -3356,29 +3613,36 @@ function buildVOR(bId){
     html+=`<div style="margin-bottom:14px">
       <div style="padding:12px 14px;background:var(--blue-light);border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:15px;font-weight:700;color:var(--blue)">${groupName}</span>
-        <div style="display:flex;gap:10px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
           ${groupVol>0?`<span style="font-size:12px;font-weight:600;color:var(--green)">${groupVol.toFixed(2)} м³</span>`:''}
           ${groupFW>0?`<span style="font-size:12px;font-weight:600;color:var(--accent)">${groupFW.toFixed(2)} м²</span>`:''}
+          ${groupRebKg>0?`<span style="font-size:12px;font-weight:600;color:var(--label)">${(groupRebKg/1000).toFixed(3)} т</span>`:''}
         </div>
       </div>
-      <div style="background:var(--surface);border-radius:0 0 12px 12px;overflow:hidden;box-shadow:var(--shadow)">${rowsHtml}</div>
+      <div style="background:var(--surface);border-radius:0 0 12px 12px;overflow:hidden;box-shadow:var(--shadow)">${rowsHtml}
+        ${groupWireKg>0?`<div style="padding:10px 14px;border-top:1px solid var(--separator);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:var(--label2)">Вязальная проволока (по группе)</span>
+          <span style="font-size:14px;font-weight:700;color:var(--label)">${(groupWireKg/1000).toFixed(3)} т</span>
+        </div>`:''}
+      </div>
     </div>`;
   });
 
+  const grandWireKg=+(grandRebKg*0.012).toFixed(1);
   const table=document.getElementById('vor-table');
   if(table)table.innerHTML=`
     <div style="background:linear-gradient(135deg,#1C1C1E,#2C2C2E);border-radius:14px;padding:16px 18px;margin-bottom:16px;color:#fff">
       <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">${b.name} — итого</div>
-      <div style="display:flex;gap:20px">
-        <div><div style="font-size:24px;font-weight:700;color:#FF9F0A">${grandFW.toFixed(2)}</div><div style="font-size:11px;color:rgba(255,255,255,0.5)">м² опалубки</div></div>
-        <div><div style="font-size:24px;font-weight:700;color:#30D158">${grandVol.toFixed(2)}</div><div style="font-size:11px;color:rgba(255,255,255,0.5)">м³ бетона</div></div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        ${grandFW>0?`<div><div style="font-size:24px;font-weight:700;color:#FF9F0A">${grandFW.toFixed(2)}</div><div style="font-size:11px;color:rgba(255,255,255,0.5)">м² опалубки</div></div>`:''}
+        ${grandVol>0?`<div><div style="font-size:24px;font-weight:700;color:#30D158">${grandVol.toFixed(2)}</div><div style="font-size:11px;color:rgba(255,255,255,0.5)">м³ бетона</div></div>`:''}
+        ${grandRebKg>0?`<div><div style="font-size:24px;font-weight:700;color:#F59E0B">${(grandRebKg/1000).toFixed(3)}</div><div style="font-size:11px;color:rgba(255,255,255,0.5)">т арматуры</div></div>`:''}
+        ${grandWireKg>0?`<div><div style="font-size:24px;font-weight:700;color:#A78BFA">${(grandWireKg/1000).toFixed(3)}</div><div style="font-size:11px;color:rgba(255,255,255,0.5)">т проволоки</div></div>`:''}
       </div>
     </div>
     ${html||'<div style="padding:20px;text-align:center;color:var(--label2)">Нет данных</div>'}`;
 }
 
-
-// ── TOAST ──
 function showToast(msg){
   document.querySelectorAll('.toast').forEach(t=>t.remove());
   const t=document.createElement('div');t.className='toast';t.textContent=msg;
@@ -3462,7 +3726,7 @@ function renderEstFilters(){
 
   // Types
   const types = [...new Set(entries.map(e => e.typeKey).filter(Boolean))];
-  const typeNames = { wall:'Стена', beam:'Балка', slab:'Перекрытие', cover:'Покрытие', foundation:'Фундамент', stair:'Лестница' };
+  const typeNames = { wall:'Стена', beam:'Балка', slab:'Перекрытие', cover:'Покрытие', foundation:'Фундамент', stair:'Лестница', rebar:'Армирование' };
   const typeColors = { wall:'var(--blue)', beam:'var(--teal)', slab:'var(--green)', cover:'var(--accent)', foundation:'var(--purple)', stair:'var(--red)' };
   document.getElementById('est-type-btns').innerHTML = types.map(t => `
     <button class="est-chip ${_est.selectedTypes.has(t)?'est-chip-on':''}"
@@ -3666,7 +3930,7 @@ function renderEstResults(matched, b, types, marks, conditions){
 
   const totalF = matched.reduce((s,e) => s + getEntryFormwork(e), 0);
   const totalV = matched.reduce((s,e) => s + e.concVol, 0);
-  const typeNames = { wall:'Стена', beam:'Балка', slab:'Перекрытие', cover:'Покрытие', foundation:'Фундамент', stair:'Лестница' };
+  const typeNames = { wall:'Стена', beam:'Балка', slab:'Перекрытие', cover:'Покрытие', foundation:'Фундамент', stair:'Лестница', rebar:'Армирование' };
 
   // Build detailed formula: group by mark, then by type
   const byType = {};
