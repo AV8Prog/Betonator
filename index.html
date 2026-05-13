@@ -2747,7 +2747,7 @@ function renderJournal(keepState){
         const t=(v.kg/1000).toFixed(3);
         return `<div class="ts-row"><span class="ts-name">${tp}</span><div class="ts-vals"><span class="ts-val conc">${t} т</span></div></div>`;
       }
-      return `<div class="ts-row"><span class="ts-name">${tp}</span><div class="ts-vals"><span class="ts-val form">${v.f.toFixed(1)} м²</span><span class="ts-val conc">${v.v.toFixed(1)} м³</span></div></div>`;
+      return `<div class="ts-row"><span class="ts-name">${tp}</span><div class="ts-vals"><span class="ts-val form">${v.f.toFixed(1)} м²</span><span class="ts-val conc">${v.v.toFixed(1)} м³</span>${v.kg>0?`<span class="ts-val" style="color:#D97706">${(v.kg/1000).toFixed(3)} т</span>`:''}</div></div>`;
     }).join('');
 
     // Sort marks
@@ -2795,6 +2795,7 @@ function renderJournal(keepState){
                 return e.formula?`<div class="ep-formula" style="margin-bottom:6px">${e.formula.replace(/\n/g,'<br>')}</div>`:'';
               })()}
               ${(e.params||[]).map(p=>`<div class="ep-row"><span class="ep-lbl">${p.label}</span><span class="ep-val">${p.value}</span></div>`).join('')}
+              ${e.rebar?.items?.length?`<div style="font-size:11px;font-weight:700;color:#D97706;text-transform:uppercase;letter-spacing:0.4px;margin-top:8px;margin-bottom:4px">Арматура</div>`+''+e.rebar.items.map(r=>`<div class="ep-row"><span class="ep-lbl">${r.name||r.klass+' Ø'+r.diam+' мм'}</span><span class="ep-val" style="color:#D97706">${r.kg.toFixed(1)} кг</span></div>`).join('')+`<div class="ep-row"><span class="ep-lbl">Вязальная проволока</span><span class="ep-val">${e.wireKg||((e.rebarKg||0)*0.012).toFixed(1)} кг</span></div>`:''}
             </div>`:'';
           const swipeId='sw-'+safeId;
           return`<div class="entry-swipe-wrap" id="wrap-${safeId}" style="margin-bottom:4px">
@@ -2818,6 +2819,7 @@ function renderJournal(keepState){
                     ${e.water?`<span class="entry-val" style="background:rgba(48,209,88,0.12);color:var(--green)">${e.water}</span>`:''}
                     ${e.frost?`<span class="entry-val" style="background:rgba(90,200,250,0.12);color:var(--teal)">${e.frost}</span>`:''}
                     ${e.grade?`<span class="entry-val" style="background:rgba(175,82,222,0.1);color:var(--purple)">${e.grade}</span>`:''}
+                    ${e.typeKey!=='rebar'&&e.rebarKg>0?`<span class="entry-val" style="background:rgba(245,158,11,0.12);color:#D97706">${(e.rebarKg/1000).toFixed(3)} т</span>`:''}
                     ${!e.concreteClass&&!e.water&&!e.frost&&!e.grade?`<button onclick="editConcrete(${b.id},'${e.id}')" style="background:none;border:none;color:var(--label3);font-family:inherit;font-size:12px;cursor:pointer;padding:0">+ бетон</button>`:'<button onclick="editConcrete('+b.id+',\''+e.id+'\')" style=\"background:none;border:none;color:var(--label3);font-family:inherit;font-size:11px;cursor:pointer;padding:0\">✎</button>'}
                   </div>
                   ${paramsBody}
@@ -2891,7 +2893,7 @@ function renderGrandSummary(){
       if(v.isRebar){
         return `<div class="gc-row"><span class="gc-type">${tp}</span><div class="gc-vals"><span class="gc-val" style="color:#D97706">${(v.kg/1000).toFixed(3)} т</span></div></div>`;
       }
-      return `<div class="gc-row"><span class="gc-type">${tp}</span><div class="gc-vals"><span class="gc-val form">${v.f.toFixed(2)} м²</span><span class="gc-val conc">${v.v.toFixed(2)} м³</span></div></div>`;
+      return `<div class="gc-row"><span class="gc-type">${tp}</span><div class="gc-vals"><span class="gc-val form">${v.f.toFixed(2)} м²</span><span class="gc-val conc">${v.v.toFixed(2)} м³</span>${v.kg>0?`<span class="gc-val" style="color:#D97706">${(v.kg/1000).toFixed(3)} т</span>`:''}</div></div>`;
     }).join('')}</div>
   </div>`;
 }
@@ -3364,6 +3366,8 @@ function renderVOR(bId){
     font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s">${label}</button>`;
 
   const allTypes=[...new Set(entries.map(e=>e.typeKey).filter(Boolean))];
+  // Add rebar if any concrete entry has attached rebar
+  if(!allTypes.includes('rebar')&&entries.some(e=>e.rebar?.items?.length>0||e.rebarKg>0)) allTypes.push('rebar');
   const typeLabels={wall:'Стены',slab:'Перекрытия',cover:'Покрытия',foundation:'Фундамент',beam:'Балки',stair:'Лестницы',rebar:'Армирование'};
 
   const groupsHTML=state.markGroups.map((g,gi)=>{
@@ -3478,10 +3482,14 @@ function buildVOR(bId){
 
   state.markGroups.forEach(group=>{
     const groupTypes=group.types&&group.types.length>0?group.types:null;
-    const groupEntries=entries.filter(e=>
-      (group.marks.length===0||group.marks.includes(e.mark))&&
-      (!groupTypes||groupTypes.includes(e.typeKey))
-    );
+    const groupEntries=entries.filter(e=>{
+      if(group.marks.length>0&&!group.marks.includes(e.mark)) return false;
+      if(!groupTypes) return true;
+      // 'rebar' type matches entries with attached rebar OR typeKey=rebar
+      const typeOk=groupTypes.includes(e.typeKey)||
+        (groupTypes.includes('rebar')&&(e.rebar?.items?.length>0||e.rebarKg>0));
+      return typeOk;
+    });
     if(!groupEntries.length)return;
     const groupName=group.name||`Отм. ${group.marks.join(', ')}`;
     const groupFW=groupEntries.reduce((s,e)=>s+getEntryFormwork(e),0);
@@ -3726,6 +3734,9 @@ function renderEstFilters(){
 
   // Types
   const types = [...new Set(entries.map(e => e.typeKey).filter(Boolean))];
+  // Add 'rebar' chip if any entry has attached rebar items
+  const hasAttachedRebar = b.entries.some(e=>!e.isPlaceholder&&(e.rebar?.items?.length>0||e.rebarKg>0));
+  if(hasAttachedRebar && !types.includes('rebar')) types.push('rebar');
   const typeNames = { wall:'Стена', beam:'Балка', slab:'Перекрытие', cover:'Покрытие', foundation:'Фундамент', stair:'Лестница', rebar:'Армирование' };
   const typeColors = { wall:'var(--blue)', beam:'var(--teal)', slab:'var(--green)', cover:'var(--accent)', foundation:'var(--purple)', stair:'var(--red)' };
   document.getElementById('est-type-btns').innerHTML = types.map(t => `
@@ -3911,8 +3922,11 @@ function runEstimate(){
 
   // Element matches if it satisfies AT LEAST ONE condition
   const matched = b.entries.filter(e => {
-    if(e.isPlaceholder||!types.includes(e.typeKey)||!marks.includes(e.mark)) return false;
-    // If all conditions are empty — include all
+    if(e.isPlaceholder||!marks.includes(e.mark)) return false;
+    // Check type match: rebar type matches entries with attached rebar OR typeKey=rebar
+    const typeMatch = types.includes(e.typeKey) ||
+      (types.includes('rebar') && (e.rebar?.items?.length>0 || e.rebarKg>0));
+    if(!typeMatch) return false;
     const hasAnyFilter = conditions.some(c=>Object.keys(c.filters).length>0);
     if(!hasAnyFilter) return true;
     return conditions.some(c=>Object.keys(c.filters).length>0&&matchesCondition(e,c.filters));
@@ -4006,6 +4020,52 @@ function renderEstResults(matched, b, types, marks, conditions){
       </div>
     </div>`).join('');
 
+  // Build rebar summary from all matched entries
+  const rebarByDiam = {};
+  matched.forEach(e=>{
+    (e.rebar?.items||[]).forEach(r=>{
+      const key = (r.klass||'А500С')+'_'+(r.diam||16);
+      if(!rebarByDiam[key]) rebarByDiam[key]={klass:r.klass||'А500С',diam:r.diam||16,kg:0};
+      rebarByDiam[key].kg += r.kg||0;
+    });
+    // Also handle rebar-type entries
+    if(e.typeKey==='rebar'){
+      (e.params||[]).forEach(p=>{
+        if(p.label?.startsWith('Горячекатанная')){
+          const key='_'+p.label;
+          if(!rebarByDiam[key]) rebarByDiam[key]={name:p.label,kg:0};
+          rebarByDiam[key].kg += parseFloat(p.value)||0;
+        }
+      });
+    }
+  });
+  const rebarEntries = Object.values(rebarByDiam).filter(r=>r.kg>0);
+  const totalRebKg = rebarEntries.reduce((s,r)=>s+r.kg,0);
+  const totalWireKg = +(totalRebKg*0.012).toFixed(1);
+
+  const rebarHTML = rebarEntries.length>0?`
+    <div class="card" style="overflow:hidden;margin-top:10px">
+      <div style="padding:10px 14px;background:rgba(245,158,11,0.08);border-bottom:1px solid var(--separator)">
+        <span style="font-size:11px;font-weight:700;color:#D97706;text-transform:uppercase;letter-spacing:0.4px">Арматура</span>
+      </div>
+      ${rebarEntries.map((r,i)=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--separator);background:${i%2?'var(--surface2)':'var(--surface)'}">
+          <div style="font-size:13px;font-weight:600;color:var(--label);flex:1;min-width:0;padding-right:8px">${r.name||('Горячекатанная арматурная сталь класса '+r.klass+', диаметром '+r.diam+' мм')}</div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:14px;font-weight:700;color:#D97706">${(r.kg/1000).toFixed(3)} т</div>
+            <div style="font-size:11px;color:var(--label2)">${r.kg.toFixed(1)} кг</div>
+          </div>
+        </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--separator)">
+        <div style="font-size:13px;color:var(--label2)">Вязальная проволока (~1.2%)</div>
+        <div style="font-size:14px;font-weight:700;color:var(--label)">${(totalWireKg/1000).toFixed(3)} т</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 14px">
+        <div style="font-size:13px;font-weight:700;color:var(--label)">Итого арматура</div>
+        <div style="font-size:15px;font-weight:700;color:#D97706">${(totalRebKg/1000).toFixed(3)} т</div>
+      </div>
+    </div>`:'';
+
   rc.innerHTML = `
     <div class="section">
       <div class="section-header">Результат — ${matched.length} эл.</div>
@@ -4013,7 +4073,7 @@ function renderEstResults(matched, b, types, marks, conditions){
         <div class="result-hero">
           <div class="result-hero-label">${filterDesc}</div>
           <div><span class="result-hero-value">${totalF.toFixed(2)}</span><span class="result-hero-unit">м²</span></div>
-          <div class="result-hero-note">бетон ${totalV.toFixed(3)} м³ · ${matched.length} элементов</div>
+          <div class="result-hero-note">бетон ${totalV.toFixed(3)} м³ · ${matched.length} элементов${totalRebKg>0?' · арматура '+(totalRebKg/1000).toFixed(3)+' т':''}</div>
         </div>
         <div style="padding:14px 16px;border-bottom:1px solid var(--separator)">
           <div style="font-size:11px;font-weight:600;color:var(--label2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Формула расчёта</div>
@@ -4024,6 +4084,7 @@ function renderEstResults(matched, b, types, marks, conditions){
         </div>
         <div style="padding:14px 16px">${itemsHTML}</div>
       </div>
+      ${rebarHTML}
       <button class="cta-btn orange" onclick="saveEstimate(${JSON.stringify(totalF).replace(/"/g,'&quot;')},${JSON.stringify(totalV).replace(/"/g,'&quot;')},${matched.length})"
         style="margin-top:4px">Сохранить в смету здания</button>
     </div>`;
