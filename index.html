@@ -604,11 +604,6 @@ body {
   touch-action:pan-y;
   will-change:transform;
 }
-.entry-actions-revealed {
-  position:absolute !important;
-  right:-192px !important;
-  top:0; bottom:0; width:192px;
-}
 .entry-item { flex-shrink:0; width:100%; }
 .entry-actions-revealed {
   position:absolute; right:-192px; top:0; bottom:0;
@@ -940,7 +935,259 @@ body {
   background:var(--surface); color:var(--label);
   box-shadow:0 1px 3px rgba(0,0,0,0.1);
 }
+
+/* ── ICON BTN ── */
+.icon-btn {
+  background:transparent; border:none; cursor:pointer;
+  font-size:13px; padding:2px 4px; opacity:0.5;
+  transition:opacity 0.15s; line-height:1;
+}
+
+/* ══════════════════════════════════════
+   DESKTOP LAYOUT (≥768px)
+══════════════════════════════════════ */
+@media (min-width: 768px) {
+
+  /* Remove mobile constraints */
+  html, body { height:100%; overflow:hidden; }
+
+  /* App shell: sidebar + content */
+  body {
+    display:flex;
+    flex-direction:row;
+  }
+
+  /* ── Sidebar (was tab-bar) ── */
+  .tab-bar {
+    position:fixed;
+    left:0; top:0; bottom:0;
+    width:220px;
+    height:100vh;
+    flex-direction:column;
+    justify-content:flex-start;
+    align-items:stretch;
+    padding:24px 12px 24px;
+    border-right:1px solid var(--separator);
+    border-top:none;
+    backdrop-filter:blur(32px) saturate(180%);
+    -webkit-backdrop-filter:blur(32px) saturate(180%);
+    gap:4px;
+    z-index:100;
+  }
+
+  /* App logo in sidebar */
+  .tab-bar::before {
+    content:'Бетонатор';
+    display:block;
+    font-size:20px;
+    font-weight:800;
+    color:var(--label);
+    padding:0 12px 20px;
+    letter-spacing:-0.5px;
+    border-bottom:1px solid var(--separator);
+    margin-bottom:12px;
+  }
+
+  .tab-item {
+    flex-direction:row;
+    justify-content:flex-start;
+    gap:12px;
+    padding:11px 14px;
+    border-radius:10px;
+    min-width:0;
+    font-size:15px;
+  }
+
+  .tab-item.active {
+    background:var(--blue-light);
+  }
+
+  .tab-label {
+    font-size:15px;
+    font-weight:600;
+    opacity:1;
+  }
+
+  .tab-icon svg { width:20px; height:20px; }
+
+  /* ── Main content area ── */
+  .page-wrap, #page-calc, #page-journal, #page-settings, #page-estimate {
+    margin-left:220px;
+    height:100vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* ── Page layout: two columns for calc+journal ── */
+  #page-calc {
+    display:grid;
+    grid-template-columns:420px 1fr;
+    grid-template-rows:100vh;
+    gap:0;
+    padding:0;
+  }
+
+  #page-calc .page-scroll {
+    grid-column:1;
+    overflow-y:auto;
+    padding:24px 24px 32px;
+    border-right:1px solid var(--separator);
+  }
+
+  /* Result panel — right column */
+  #page-calc .result-right-panel {
+    grid-column:2;
+    overflow-y:auto;
+    padding:24px 28px 32px;
+    background:var(--bg2);
+  }
+
+  /* ── Estimate: side-by-side ── */
+  #page-estimate {
+    display:grid;
+    grid-template-columns:380px 1fr;
+    gap:0;
+  }
+
+  #page-estimate .est-filters-col {
+    border-right:1px solid var(--separator);
+    overflow-y:auto;
+    padding:24px;
+    height:100vh;
+  }
+
+  #page-estimate .est-results-col {
+    overflow-y:auto;
+    padding:24px 28px;
+    height:100vh;
+  }
+
+  /* ── Typography & spacing ── */
+  .large-title h1 { font-size:32px; }
+  .section { max-width:none; }
+
+  /* Cards wider */
+  .card, .type-grid { max-width:none; }
+
+  /* Status bar hidden on desktop */
+  .status-bar-space, .status-bar { display:none !important; }
+
+  /* Safe area override */
+  .page { padding-bottom:0 !important; }
+
+  /* Type grid: 3 cols on desktop */
+  .type-grid {
+    grid-template-columns:repeat(3,1fr) !important;
+  }
+
+  /* Journal: wider marks */
+  .mark-card { max-width:none; }
+
+  /* CTA button max-width */
+  .cta-btn { max-width:480px; }
+
+  /* Result card */
+  .result-card { max-width:none; }
+
+  /* Hide mobile-only decorations */
+  .result-wrap .result-card-top,
+  .result-wrap .result-card-bottom { border-radius:14px; }
+}
+
+@media (min-width: 1100px) {
+  .tab-bar { width:240px; }
+  #page-calc, .page-wrap,
+  #page-journal, #page-settings, #page-estimate {
+    margin-left:240px;
+  }
+  #page-calc {
+    grid-template-columns:460px 1fr;
+  }
+}
+
+
+@media (min-width: 768px) {
+  /* Pages fill viewport and scroll internally */
+  .page {
+    position:relative !important;
+    left:auto !important;
+    width:auto !important;
+    height:100vh;
+    overflow-y:auto;
+    display:none;
+  }
+  .page.active { display:block; }
+
+  /* Calc page has two visual zones via CSS only */
+  #page-calc {
+    display:block;
+    overflow-y:auto;
+  }
+
+  /* Wider content inside pages */
+  .page > .large-title,
+  .page > .section,
+  .page > .card,
+  #calc-panel,
+  #result-container {
+    max-width:680px;
+  }
+
+  /* But on wider screens, use more space */
+  @media (min-width: 1100px) {
+    .page > .large-title,
+    .page > .section,
+    .page > .card,
+    #calc-panel,
+    #result-container {
+      max-width:800px;
+    }
+  }
+}
+
+
+/* ── REBAR PCT CHIPS ── */
+.rebar-pct-chip {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--separator);
+  background: var(--surface);
+  color: var(--label2);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.rebar-pct-chip.active {
+  border-color: var(--blue);
+  background: var(--blue-light);
+  color: var(--blue);
+}
+.rebar-pct-input {
+  width: 72px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1.5px solid var(--separator);
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--label);
+  text-align: center;
+  outline: none;
+}
+.rebar-pct-input:focus {
+  border-color: var(--blue);
+}
+
+
+/* ── PREVENT iOS ZOOM ON INPUT FOCUS ── */
+input, select, textarea {
+  font-size: 16px !important;
+}
 </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -1035,6 +1282,9 @@ body {
       <input type="file" accept=".json" onchange="importProject(event)" style="display:none">
     </label>
   </div>
+  <button class="cta-btn" style="margin-top:12px;background:linear-gradient(135deg,#1D6F42,#2E9E5F)" onclick="exportToExcel()">
+    <span style="font-size:18px;margin-right:6px">📊</span> Экспорт в Excel
+  </button>
 
   <div id="grand-summary-container"></div>
 
@@ -1079,13 +1329,39 @@ body {
   </div>
 
   <div class="section">
+    <div class="section-header">Напоминание о сохранении</div>
+    <div class="card">
+      <div class="card-row" style="justify-content:space-between;padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="row-icon" style="background:rgba(255,149,0,0.12)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+          </div>
+          <div>
+            <div class="row-label">Напоминать сохранить</div>
+            <div style="font-size:13px;color:var(--label2);margin-top:2px" id="reminder-status-text">Выключено</div>
+          </div>
+        </div>
+        <div class="ios-switch" id="reminder-toggle-switch" onclick="toggleSaveReminder()"></div>
+      </div>
+      <div id="reminder-interval-row" style="display:none;padding:12px 16px;border-top:1px solid var(--separator)">
+        <div style="font-size:13px;color:var(--label2);margin-bottom:10px">Интервал напоминания</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px" id="reminder-chips">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
     <div class="section-header">О приложении</div>
     <div class="card">
       <div class="card-row">
         <div class="row-icon" style="background:var(--blue-light)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" ><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="13" x2="21" y2="13"/><line x1="3" y1="18" x2="21" y2="18"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="3" x2="15" y2="18"/></svg></div>
         <div style="flex:1">
           <div class="row-label">Бетонатор</div>
-          <div style="font-size:13px;color:var(--label2);margin-top:2px">Версия 5.0</div>
+          <div style="font-size:13px;color:var(--label2);margin-top:2px">Версия 5.0.8</div>
         </div>
       </div>
       <div class="card-row" style="border-top:1px solid var(--separator)">
@@ -1193,6 +1469,153 @@ let db=(()=>{
 function saveDB(){try{localStorage.setItem('fw_db_v4',JSON.stringify(db));}catch(e){}}
 
 // ── EXPORT/IMPORT ──
+
+function exportToExcel(){
+  if(!db.buildings.length){showToast('⚠ Нет данных для экспорта');return;}
+  if(typeof XLSX==='undefined'){showToast('⚠ Библиотека Excel не загружена');return;}
+
+  const wb = XLSX.utils.book_new();
+  const typeNames={wall:'Стена',slab:'Перекрытие',cover:'Покрытие',foundation:'Фундаментная плита',beam:'Балка',stair:'Лестница',rebar:'Арматура'};
+
+  db.buildings.forEach(b=>{
+    const entries=b.entries.filter(e=>!e.isPlaceholder);
+    if(!entries.length)return;
+
+    // ── Sheet rows ──
+    const rows=[];
+
+    // Header row
+    rows.push([
+      '№','Наименование','Тип','Отметка','Дата',
+      'Высота/Толщ, мм','Длина, мм','Ширина, мм','Толщина, мм',
+      'Опалубка м²','Бетон м³','Кол-во',
+      'Класс бетона','Водонепр.','Морозост.','Марка',
+      'Арматура кг','Проволока кг',
+      'Формула опалубки','Формула бетона'
+    ]);
+
+    // Group by mark
+    const byMark={};
+    entries.forEach(e=>{
+      const m=e.mark||'—';
+      if(!byMark[m])byMark[m]=[];
+      byMark[m].push(e);
+    });
+    const sortedMarks=Object.keys(byMark).sort((a,z)=>{
+      const na=parseFloat(a),nb=parseFloat(z);
+      return(!isNaN(na)&&!isNaN(nb))?na-nb:a.localeCompare(z);
+    });
+
+    let rowNum=1;
+    sortedMarks.forEach(mark=>{
+      const markEntries=byMark[mark];
+
+      // Mark header row
+      rows.push(['','── Отм. '+mark+' ──','','','','','','','','','','','','','','','']);
+
+      markEntries.forEach(e=>{
+        const fw=getEntryFormwork(e);
+        const params=(e.params||[]).map(p=>p.label+': '+p.value).join('; ');
+        const name=e.customName||(typeNames[e.typeKey]||e.type);
+
+        // Extract formula parts
+        let fwFormula='', volFormula='';
+        if(e.formula){
+          const lines=e.formula.split('\n');
+          lines.forEach(l=>{
+            if(l.startsWith('S'))fwFormula=l;
+            else if(l.startsWith('V'))volFormula=l;
+          });
+        }
+
+        // Extract dimensional params
+        const getParam=(labels)=>{
+          const p=(e.params||[]).find(p=>labels.some(l=>p.label&&p.label.includes(l)));
+          if(!p)return'';
+          return parseFloat(p.value)||p.value||'';
+        };
+        const pHeight=getParam(['Высота','высота']);
+        const pLength=getParam(['Длина','длина','Периметр']);
+        const pWidth=getParam(['Ширина','ширина']);
+        const pThick=getParam(['Толщина','толщина']);
+
+        rows.push([
+          rowNum++,
+          name,
+          typeNames[e.typeKey]||e.type,
+          e.mark||'',
+          e.date||'',
+          pHeight,pLength,pWidth,pThick,
+          fw>0?parseFloat(fw.toFixed(2)):'',
+          e.concVol>0?parseFloat(e.concVol.toFixed(3)):'',
+          e.qty||1,
+          e.concreteClass||'',
+          e.water||'',
+          e.frost||'',
+          e.grade||'',
+          e.rebarKg>0?parseFloat(e.rebarKg.toFixed(1)):'',
+          e.wireKg>0?parseFloat(e.wireKg.toFixed(1)):'',
+          fwFormula,
+          volFormula
+        ]);
+      });
+
+      // Mark subtotal
+      const mFW=markEntries.reduce((s,e)=>s+getEntryFormwork(e),0);
+      const mVol=markEntries.reduce((s,e)=>s+e.concVol,0);
+      const mReb=markEntries.reduce((s,e)=>s+(e.rebarKg||0),0);
+      rows.push([
+        '','Итого отм. '+mark,'','','',
+        '','','','',
+        parseFloat(mFW.toFixed(2)),parseFloat(mVol.toFixed(3)),'','','','','',
+        mReb>0?parseFloat(mReb.toFixed(1)):'','','',''
+      ]);
+      rows.push(['','','','','','','','','','','','','','','','','','','','']);
+    });
+
+    // Building total
+    const tFW=entries.reduce((s,e)=>s+getEntryFormwork(e),0);
+    const tVol=entries.reduce((s,e)=>s+e.concVol,0);
+    const tReb=entries.reduce((s,e)=>s+(e.rebarKg||0),0);
+    rows.push(['','ИТОГО ПО ЗДАНИЮ','','','','','','','',parseFloat(tFW.toFixed(2)),parseFloat(tVol.toFixed(3)),'','','','','',tReb>0?parseFloat(tReb.toFixed(1)):'','','','']);
+
+    // Create sheet
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+
+    // Column widths
+    ws['!cols']=[
+      {wch:4},{wch:28},{wch:18},{wch:10},{wch:10},
+      {wch:12},{wch:12},{wch:12},{wch:12},
+      {wch:12},{wch:11},{wch:7},
+      {wch:10},{wch:8},{wch:10},{wch:8},
+      {wch:12},{wch:12},
+      {wch:45},{wch:35}
+    ];
+
+    // Sheet name max 31 chars
+    const sheetName=b.name.substring(0,31).replace(/[\/*?:\[\]]/g,'_');
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
+  // Summary sheet
+  const sumRows=[['Здание','Элементов','Опалубка м²','Бетон м³','Арматура кг']];
+  db.buildings.forEach(b=>{
+    const e=b.entries.filter(e=>!e.isPlaceholder);
+    sumRows.push([
+      b.name,e.length,
+      e.reduce((s,x)=>s+getEntryFormwork(x),0).toFixed(2),
+      e.reduce((s,x)=>s+x.concVol,0).toFixed(3),
+      e.reduce((s,x)=>s+(x.rebarKg||0),0).toFixed(1)
+    ]);
+  });
+  const sumWs=XLSX.utils.aoa_to_sheet(sumRows);
+  sumWs['!cols']=[{wch:28},{wch:10},{wch:13},{wch:10},{wch:13}];
+  XLSX.utils.book_append_sheet(wb, sumWs, 'Сводка');
+
+  const date=new Date().toLocaleDateString('ru-RU').replace(/\./g,'-');
+  XLSX.writeFile(wb, 'Бетонатор_'+date+'.xlsx');
+  showToast('✓ Excel файл сохранён');
+}
 
 function exportProject(){
   const d=new Date().toLocaleDateString('ru-RU').replace(/\./g,'-');
@@ -1383,14 +1806,15 @@ function buildFormula(tk,vals,extra){
 }
 
 // ── CALC STATE ──
-let current='wall',beamCounter=0,beams=[],lastResult=null,qty=1,calcMode='dims',wallEndsMode='none',saveMode=false;
+let current='wall',lastResult=null,qty=1,calcMode='dims',wallEndsMode='none',saveMode=false;
 let perimMode='direct',sideCounter=0,sides=[];
 
 function selectType(type){
-  current=type;beams=[];beamCounter=0;lastResult=null;sides=[];sideCounter=0;calcMode='dims';wallEndsMode='none';calcOpenings=[];rebarItems=[];rebarOpen=false;rebarCounter=0;rebarSaveMode=false;
+  current=type;lastResult=null;sides=[];sideCounter=0;calcMode='dims';wallEndsMode='none';calcOpenings=[];rebarItems=[];rebarOpen=false;rebarCounter=0;rebarSaveMode=false;_rebarPct=0;_rebarPctClass='А500С';_rebarPctConc='';_rebarPctDiam=16;
   document.querySelectorAll('.type-card').forEach(b=>b.classList.remove('active'));
   document.getElementById('btn-'+type).classList.add('active');
-  renderPanel();document.getElementById('result-container').innerHTML='';
+  renderPanel();
+initReminder();document.getElementById('result-container').innerHTML='';
 }
 
 function saveConcretePref(field,val){
@@ -1532,7 +1956,7 @@ function updateRebarItem(id,field,val){
 }
 function refreshRebarSection(){
   const sec=document.getElementById('rebar-section');
-  if(sec){const d=document.createElement('div');d.innerHTML=rebarSectionHTML();sec.replaceWith(d.firstChild);}
+  if(sec){const d=document.createElement('div');d.innerHTML=buildCombinedRebarBlock();sec.replaceWith(d.firstChild);}
 }
 function refreshRebarInline(){
   const c=document.getElementById('rebar-inline-list');if(!c)return;
@@ -1558,6 +1982,7 @@ function refreshRebarTotals(){
 }
 function updateRebarTotals(){refreshRebarTotals();}
 function getRebarResult(){
+  if(_rebarMode==='pct') return null; // pct mode handled separately in doSave
   const items=rebarItems.filter(r=>r.kg>0);if(!items.length)return null;
   const totalKg=items.reduce((s,r)=>s+r.kg,0);
   return{items:items.map(r=>({...r})),totalKg,wireKg:+(totalKg*0.012).toFixed(1)};
@@ -1605,6 +2030,220 @@ function calcRebarOnly(){
 }
 
 
+// ── REBAR % ESTIMATION ──
+const REBAR_PCT_DEFAULTS = {
+  wall:       [{label:'Мин (0.1%)',v:0.1},{label:'Лёгкое (0.2%)',v:0.2},{label:'Среднее (0.3%)',v:0.3},{label:'Тяжёлое (0.5%)',v:0.5}],
+  slab:       [{label:'Мин (0.1%)',v:0.1},{label:'Лёгкое (0.2%)',v:0.2},{label:'Среднее (0.4%)',v:0.4},{label:'Тяжёлое (0.6%)',v:0.6}],
+  cover:      [{label:'Мин (0.1%)',v:0.1},{label:'Лёгкое (0.2%)',v:0.2},{label:'Среднее (0.4%)',v:0.4},{label:'Тяжёлое (0.6%)',v:0.6}],
+  foundation: [{label:'Мин (0.1%)',v:0.1},{label:'Лёгкое (0.2%)',v:0.2},{label:'Среднее (0.4%)',v:0.4},{label:'Тяжёлое (0.6%)',v:0.6}],
+  beam:       [{label:'Мин (0.5%)',v:0.5},{label:'Среднее (1%)',v:1.0},{label:'Тяжёлое (2%)',v:2.0},{label:'Макс (3%)',v:3.0}],
+  stair:      [{label:'Мин (0.2%)',v:0.2},{label:'Среднее (0.4%)',v:0.4},{label:'Тяжёлое (0.6%)',v:0.6}],
+};
+const STEEL_DENSITY = 7850;
+let _rebarPct = 0;
+let _rebarMode = 'kg'; // 'kg' or 'pct'
+
+function calcRebarFromPct(pct, concVol){
+  if(!pct||!concVol)return null;
+  const vArm=concVol*pct/100;
+  const mArm=vArm*STEEL_DENSITY;
+  return{pct,vArm,mArm,wire:mArm*0.012};
+}
+
+function buildRebarPctPanel(){
+  if(current==='rebar')return'';
+  const presets=REBAR_PCT_DEFAULTS[current]||REBAR_PCT_DEFAULTS['wall'];
+  const chips=presets.map(function(p){
+    return '<button class="rebar-pct-chip'+(_rebarPct===p.v?' active':'')
+      +'" data-v="'+p.v+'" onclick="setRebarPct('+p.v+')">'+p.label+'</button>';
+  }).join('');
+  const clearBtn=_rebarPct>0
+    ?'<button onclick="setRebarPct(0)" style="background:var(--red-light);border:none;border-radius:7px;color:var(--red);font-size:12px;padding:5px 8px;cursor:pointer;font-family:inherit;margin-left:4px">✕</button>':'';
+  return '<div style="background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:8px">'
+    +'<div style="font-size:13px;font-weight:700;color:var(--label);margin-bottom:10px">Процент армирования (СП 63)</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="rebar-pct-chips">'+chips+'</div>'
+    +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+    +'<input class="rebar-pct-input" type="number" id="rebar-pct-inp" placeholder="0.0" min="0" max="10" step="0.1"'
+    +' value="'+(_rebarPct||'')+'" oninput="onRebarPctInput(this.value)">'
+    +'<span style="font-size:13px;color:var(--label2)">% от объёма бетона</span>'
+    +clearBtn+'</div>'
+    +(_rebarPct>0?'<div style="margin-top:8px;font-size:12px;color:var(--label2)">≈ V×µ×7850 — посчитается после расчёта</div>':'')
+    +'</div>';
+}
+
+function setRebarPct(pct){
+  _rebarPct=pct;
+  const inp=document.getElementById('rebar-pct-inp');
+  if(inp)inp.value=pct||'';
+  document.querySelectorAll('.rebar-pct-chip').forEach(c=>{
+    c.classList.toggle('active',parseFloat(c.dataset.v)===pct);
+  });
+  // Update header subtitle
+  const sub=document.querySelector('#rebar-section .rebar-title+div');
+  if(sub)sub.textContent=pct>0?'µ = '+pct+'% от объёма':'Не указана';
+}
+
+function onRebarPctInput(val){
+  _rebarPct=parseFloat(val)||0;
+  document.querySelectorAll('.rebar-pct-chip').forEach(c=>{
+    c.classList.toggle('active',parseFloat(c.dataset.v)===_rebarPct);
+  });
+}
+
+
+// ── µ_MIN TABLE (СП 63.13330.2018, упрощённые значения) ──
+// Keys: concreteClass_rebarClass → µ_min %
+const MU_MIN_TABLE = {
+  'В10_А240':0.10,'В10_А500С':0.05,
+  'В15_А240':0.15,'В15_А500С':0.07,
+  'В20_А240':0.18,'В20_А500С':0.08,
+  'В25_А240':0.20,'В25_А500С':0.10,
+  'В30_А240':0.22,'В30_А500С':0.11,
+  'В35_А240':0.25,'В35_А500С':0.12,
+  'В40_А240':0.28,'В40_А500С':0.13,
+  'В45_А240':0.30,'В45_А500С':0.14,
+  'В50_А240':0.32,'В50_А500С':0.15,
+};
+const MU_REBAR_CLASSES = ['А240','А500С','А500СП','Ат500С','А600','А800'];
+const MU_CONCRETE_CLASSES = ['В10','В15','В20','В25','В30','В35','В40','В45','В50'];
+const MU_DIAMS = [6,8,10,12,14,16,18,20,22,25,28,32,36,40];
+let _rebarPctClass = 'А500С';
+let _rebarPctConc  = '';  // берётся из sp-class если не выбран
+let _rebarPctDiam  = 16;
+
+function getMuMin(conc, klass){
+  if(!conc||!klass) return null;
+  const key = conc+'_'+(klass.startsWith('А500')?'А500С':'А240');
+  return MU_MIN_TABLE[key]||null;
+}
+
+
+function buildCombinedRebarBlock(){
+  const totalKg=rebarItems.reduce((s,r)=>s+(r.kg||0),0);
+  const wireKg=totalKg>0?+(totalKg*0.012).toFixed(1):0;
+
+  // ── Mode switcher ──
+  const modeSwitch='<div style="display:flex;gap:0;margin-bottom:12px;background:var(--bg2);border-radius:10px;padding:3px">'
+    +'<button onclick="setRebarMode(\'kg\')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;'
+    +(_rebarMode==='kg'?'background:var(--surface);color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,0.1)':'background:transparent;color:var(--label2)')
+    +'">По весу (кг)</button>'
+    +'<button onclick="setRebarMode(\'pct\')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;'
+    +(_rebarMode==='pct'?'background:var(--surface);color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,0.1)':'background:transparent;color:var(--label2)')
+    +'">По проценту (%)</button>'
+    +'</div>';
+
+  // ── KG mode: rows by diameter ──
+  const colHdr='<div style="display:flex;align-items:center;gap:8px;padding:8px 14px 6px;border-bottom:1px solid var(--separator);background:var(--bg2)">'
+    +'<span style="font-size:11px;font-weight:700;color:var(--label2);flex:1;text-transform:uppercase;letter-spacing:0.4px">Марка</span>'
+    +'<span style="font-size:11px;font-weight:700;color:var(--label2);flex:1;text-transform:uppercase;letter-spacing:0.4px">Диаметр</span>'
+    +'<span style="font-size:11px;font-weight:700;color:var(--label2);width:100px;flex-shrink:0;text-align:right;padding-right:36px;text-transform:uppercase;letter-spacing:0.4px">Кг</span>'
+    +'</div>';
+  const rows=rebarItems.map(r=>rebarRowHTML(r)).join('');
+  const totals=totalKg>0
+    ?'<div style="padding:10px 14px;border-top:1.5px solid var(--separator)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+      +'<span style="font-size:13px;font-weight:700;color:var(--label)">Итого арматура</span>'
+      +'<span style="font-size:16px;font-weight:700;color:var(--accent)">'+totalKg.toFixed(1)+' кг</span>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-size:13px;color:var(--label2)">Вязальная проволока (~1.2%)</span>'
+      +'<span style="font-size:14px;font-weight:600;color:var(--label)">'+wireKg+' кг</span>'
+      +'</div></div>':'';
+  const kgBody=(rebarItems.length>0?colHdr+rows:'<div style="padding:12px 14px;font-size:13px;color:var(--label2)">Арматура не добавлена</div>')
+    +totals
+    +'<div style="padding:10px 14px"><button onclick="addRebarRow()" style="width:100%;padding:10px;background:none;border:1.5px dashed var(--accent);border-radius:9px;color:var(--accent);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">+ Добавить арматуру</button></div>';
+
+  // ── PCT mode: class/diam selectors + chips + input ──
+  // Auto-detect concrete class from save panel if not manually set
+  const autoConc=_rebarPctConc||document.getElementById('sp-class-calc-save')?.value||'';
+  const muMin=getMuMin(autoConc,_rebarPctClass);
+  const muWarning=(_rebarPct>0&&muMin!==null&&_rebarPct<muMin)
+    ?'<div style="margin-top:8px;padding:8px 10px;background:rgba(255,59,48,0.08);border-radius:8px;border-left:3px solid var(--red);font-size:12px;color:var(--red)">⚠ Ниже µ_min = '+muMin+'% по СП 63 для '+autoConc+' / '+_rebarPctClass+'</div>':'';
+  const muHint=muMin!==null&&!_rebarPct
+    ?'<div style="margin-top:8px;font-size:12px;color:var(--label2)">µ_min = '+muMin+'% для '+autoConc+' / '+_rebarPctClass+' (СП 63)</div>':'';
+
+  const klassOpts=MU_REBAR_CLASSES.map(k=>'<option value="'+k+'"'+(_rebarPctClass===k?' selected':'')+'>'+k+'</option>').join('');
+  const diamOpts=MU_DIAMS.map(d=>'<option value="'+d+'"'+(_rebarPctDiam===d?' selected':'')+'>Ø'+d+' мм</option>').join('');
+  const concOpts='<option value="">— авто —</option>'+MU_CONCRETE_CLASSES.map(c=>'<option value="'+c+'"'+(_rebarPctConc===c?' selected':'')+'>'+c+'</option>').join('');
+
+  const presets=REBAR_PCT_DEFAULTS[current]||REBAR_PCT_DEFAULTS['wall'];
+  const chips=presets.map(function(p){
+    const isBelow=muMin!==null&&p.v<muMin;
+    return '<button class="rebar-pct-chip'+(_rebarPct===p.v?' active':'')+'"'
+      +' data-v="'+p.v+'" onclick="setRebarPct('+p.v+')"'
+      +(isBelow?' style="opacity:0.5" title="Ниже µ_min"':'')+'>'+p.label+'</button>';
+  }).join('');
+  const clearBtn=_rebarPct>0
+    ?'<button onclick="setRebarPct(0)" style="background:var(--red-light);border:none;border-radius:7px;color:var(--red);font-size:12px;padding:5px 8px;cursor:pointer;font-family:inherit;margin-left:4px">✕</button>':'';
+
+  const selStyle='"width:100%;padding:9px 10px;border-radius:9px;border:1.5px solid var(--separator);background:var(--surface);font-family:inherit;font-size:14px;color:var(--label);outline:none"';
+  const pctBody='<div style="padding:14px">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;align-items:end">'
+    +'<div><div style="font-size:11px;font-weight:600;color:var(--label2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Класс арм.</div>'
+    +'<select style='+selStyle+' onchange="setRebarPctClass(this.value)">'+klassOpts+'</select></div>'
+    +'<div><div style="font-size:11px;font-weight:600;color:var(--label2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.3px">Диаметр</div>'
+    +'<select style='+selStyle+' onchange="_rebarPctDiam=parseInt(this.value)">'+diamOpts+'</select></div>'
+    +'<div><div style="font-size:11px;font-weight:600;color:var(--label2);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.3px">Бетон</div>'
+    +'<select style='+selStyle+' onchange="setRebarPctConc(this.value)">'+concOpts+'</select></div>'
+    +'</div>'
+    +'<div style="font-size:11px;font-weight:700;color:var(--label2);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Процент армирования</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">'+chips+'</div>'
+    +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+    +'<input class="rebar-pct-input" type="number" id="rebar-pct-inp" placeholder="0.0" min="0" max="10" step="0.1"'
+    +' value="'+(_rebarPct||'')+'" oninput="onRebarPctInput(this.value)">'
+    +'<span style="font-size:13px;color:var(--label2)">%</span>'
+    +clearBtn+'</div>'
+    +muHint+muWarning
+    +(_rebarPct>0?'<div style="margin-top:6px;font-size:12px;color:var(--label2)">≈ V×µ×7850 кг/м³ — посчитается после расчёта</div>':'')
+    +'</div>';
+
+  return '<div class="rebar-section" id="rebar-section">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;cursor:pointer" onclick="toggleRebarSection()">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<div class="rebar-header-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="2" y1="17" x2="22" y2="17"/></svg></div>'
+    +'<div><div class="rebar-title">Арматура</div>'
+    +'<div style="font-size:11px;color:var(--label2);margin-top:1px">'
+    +(_rebarMode==='kg'?(totalKg>0?totalKg.toFixed(1)+' кг · проволока '+wireKg+' кг':'Не указана')
+      :(_rebarPct>0?'µ = '+_rebarPct+'% от объёма':'Не указана'))
+    +'</div></div></div>'
+    +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" id="rebar-chevron" style="transform:rotate('+(rebarOpen?'90':'0')+'deg);transition:transform 0.2s;color:var(--label2)"><polyline points="9,18 15,12 9,6"/></svg>'
+    +'</div>'
+    +'<div id="rebar-body" style="display:'+(rebarOpen?'block':'none')+'">'
+    +'<div style="padding:12px 14px 4px">'+modeSwitch+'</div>'
+    +(_rebarMode==='kg'?kgBody:pctBody)
+    +'</div></div>';
+}
+
+function setRebarPctClass(klass){
+  _rebarPctClass=klass;
+  // Auto-update µ_min
+  const conc=_rebarPctConc||document.getElementById('sp-class-calc-save')?.value||'';
+  if(conc){
+    const mu=getMuMin(conc,klass);
+    if(mu!==null&&!_rebarPct) _rebarPct=mu;
+  }
+  refreshRebarSection();
+}
+function setRebarPctConc(conc){
+  _rebarPctConc=conc;
+  // Auto-set µ_min if no manual % entered
+  if(conc&&_rebarPctClass){
+    const mu=getMuMin(conc,_rebarPctClass);
+    if(mu!==null&&!_rebarPct){
+      _rebarPct=mu;
+    }
+  }
+  refreshRebarSection();
+}
+
+function setRebarMode(mode){
+  _rebarMode=mode;
+  const sec=document.getElementById('rebar-section');
+  if(sec){const d=document.createElement('div');d.innerHTML=buildCombinedRebarBlock();sec.replaceWith(d.firstChild);}
+  rebarOpen=true;
+}
+
+
 function renderPanel(){
   if(current==='rebar'){
     const p=document.getElementById('calc-panel');
@@ -1638,14 +2277,18 @@ function renderPanel(){
   }
   const t=TYPES[current],p=document.getElementById('calc-panel');
   const isStair=current==='stair';
+  const isRebar=current==='rebar';
   const modeCols=isStair?2:3;
   const areaBtn=isStair?'':`<button class="mode-btn" id="cm-area" onclick="setCalcMode('area')">▦ Площадь</button>`;
 
-  const modeBar=`<div class="mode-picker" style="grid-template-columns:repeat(${modeCols},1fr);margin-bottom:16px">
+  const modeBar=`<div class="mode-picker" style="grid-template-columns:repeat(${isStair?2:3},1fr);margin-bottom:16px">
     <button class="mode-btn active" id="cm-dims" onclick="setCalcMode('dims')">📏 Размеры</button>
     ${areaBtn}
     <button class="mode-btn" id="cm-perim" onclick="setCalcMode('perim')">📐 Периметр</button>
-  </div>`;
+  </div>
+  ${current!=='stair'&&current!=='rebar'?`<div class="mode-picker" style="grid-template-columns:1fr;margin-bottom:16px">
+    <button class="mode-btn" id="cm-vol" onclick="setCalcMode('vol')">∛ По объёму бетона</button>
+  </div>`:''}`;
 
   const fHTML=`<div class="card input-group" style="margin-bottom:8px">
     ${t.fields.map((f,i)=>`<div class="input-row" id="ir-${f.id}">
@@ -1670,7 +2313,7 @@ function renderPanel(){
       <button class="ends-btn" data-ends="two" onclick="setWallEnds('two')" style="padding:11px 6px;background:var(--surface);border:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--label2);cursor:pointer;transition:all 0.15s">Два торца</button>
     </div>
   </div>`:'';
-  const bSec='';
+  const bSec=''; // reserved
 
   // Формула для режима площадь
   const areaFormulas={
@@ -1783,7 +2426,46 @@ function renderPanel(){
       ${modeBar}
       <div id="result-hero-anchor"></div>
       <div id="calc-inner-section">
-        <div id="block-dims">
+              <div id="block-vol" style="display:none">
+    <div class="card input-group" style="margin-bottom:8px">
+      <div class="input-row">
+        <span class="input-label">Объём бетона</span>
+        <input class="input-field" type="number" id="vol_v" oninput="updateVolFormula()" placeholder="2.000" min="0.001" step="0.001"
+          onfocus="this.closest('.input-row').classList.add('focused')"
+          onblur="this.closest('.input-row').classList.remove('focused')">
+        <span class="input-unit">м³</span>
+      </div>
+      <div class="input-row">
+        <span class="input-label">Высота элемента</span>
+        <input class="input-field" type="number" id="vol_h" oninput="updateVolFormula()" placeholder="400" min="1" step="1"
+          onfocus="this.closest('.input-row').classList.add('focused')"
+          onblur="this.closest('.input-row').classList.remove('focused')">
+        <span class="input-unit">мм</span>
+      </div>
+      <div class="input-row">
+        <span class="input-label">Толщина элемента</span>
+        <input class="input-field" type="number" id="vol_t" oninput="updateVolFormula()" placeholder="150" min="1" step="1"
+          onfocus="this.closest('.input-row').classList.add('focused')"
+          onblur="this.closest('.input-row').classList.remove('focused')">
+        <span class="input-unit">мм</span>
+      </div>
+      <div class="input-row">
+        <span class="input-label">Сторон опалубки</span>
+        <select id="vol_sides" class="input-field" style="font-size:16px"
+          onchange="updateVolFormula()">
+          <option value="1">1 сторона</option>
+          <option value="2" selected>2 стороны</option>
+          <option value="3">3 стороны</option>
+          <option value="perim">Периметр сечения</option>
+        </select>
+      </div>
+    </div>
+    <div id="vol-formula-box" style="background:rgba(0,122,255,0.06);border-radius:10px;padding:10px 14px;margin-top:8px;font-size:13px;color:var(--blue);line-height:1.8;display:none">
+      <span style="font-weight:600;opacity:0.7;font-size:11px;text-transform:uppercase;letter-spacing:0.5px">Формула:</span><br>
+      <span id="vol-formula-text"></span>
+    </div>
+  </div>
+<div id="block-dims">
           ${fHTML}
           ${wallEnds}
           ${bSec}
@@ -1792,7 +2474,6 @@ function renderPanel(){
         <div id="block-perim" style="display:none">${perimBlock.slice(perimBlock.indexOf('>')+1,perimBlock.lastIndexOf('</'))}</div>
       </div>
       <div id="result-bottom-anchor"></div>
-      ${calcBtn}
       ${stepperQty}
 
       <!-- Openings section for wall/slab/cover -->
@@ -1808,7 +2489,7 @@ function renderPanel(){
         <div id="calc-openings-list" style="display:none;margin-bottom:14px;box-sizing:border-box;width:100%;overflow:hidden"></div>
       </div>`:''}
 
-      ${['wall','slab','cover','foundation','beam','stair'].includes(current)?rebarSectionHTML():''}
+      ${['wall','slab','cover','foundation','beam','stair'].includes(current)?buildCombinedRebarBlock():''}
 
       <!-- Save to journal toggle -->
       <div class="ios-toggle-row" onclick="toggleSaveMode()">
@@ -1821,6 +2502,11 @@ function renderPanel(){
 
       <!-- Inline save fields -->
       <div class="inline-save-panel" id="inline-save-panel">
+        <div class="inline-save-section">
+          <div class="inline-save-label">Название элемента (необязательно)</div>
+          <input id="sp-elem-name-calc-save" type="text" placeholder="Напр: Стена бета"
+            style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--separator);background:var(--surface);font-family:inherit;font-size:15px;color:var(--label);outline:none;box-sizing:border-box">
+        </div>
         <div class="inline-save-section">
           <div class="inline-save-label">Здание</div>
           <div class="sp-selector" id="sp-btog-calc-save" onclick="toggleBuildingDrop('calc-save')" style="background:var(--surface);border-radius:10px;border:1.5px solid var(--separator)">
@@ -1870,6 +2556,7 @@ function renderPanel(){
         </div>
       </div>
 
+      ${calcBtn}
     </div>`;
 
   qty=1;sides=[];sideCounter=0;perimMode='direct';
@@ -1879,7 +2566,7 @@ function renderPanel(){
 function setCalcMode(mode){
   if(mode==='area'&&current==='stair')mode='dims';
   calcMode=mode;
-  ['dims','area','perim'].forEach(m=>{
+  ['dims','area','perim','vol'].forEach(m=>{
     document.getElementById('cm-'+m)?.classList.toggle('active',m===mode);
     const bl=document.getElementById('block-'+m);
     if(bl)bl.style.display=m===mode?'':'none';
@@ -1942,19 +2629,7 @@ function initStairAutoCalc(){
 
 
 
-function removeBeam(id){beams=beams.filter(b=>b.id!==id);document.getElementById('beam-'+id)?.remove();updateBeamBadge();}
-function updateBeamBadge(){const b=document.getElementById('beam-badge');if(!b)return;b.style.display=beams.length?'':'none';b.textContent=beams.length+' шт.';}
-function getBeamData(){
-  let hasError=false;const results=[];
-  for(const b of beams){
-    const hE=document.getElementById('b'+b.id+'_height'),wE=document.getElementById('b'+b.id+'_width'),
-          lE=document.getElementById('b'+b.id+'_length'),cE=document.getElementById('b'+b.id+'_count');
-    const h=parseFloat(hE?.value),w=parseFloat(wE?.value),l=parseFloat(lE?.value),c=parseFloat(cE?.value)||1;
-    if(!h||h<=0||!w||w<=0||!l||l<=0){hasError=true;}
-    else{const H=h/1e3,W=w/1e3,L=l/1e3;results.push({id:b.id,count:c,total:(W+2*H)*L*c,vol:W*H*L*c});}
-  }
-  return{results,hasError};
-}
+
 
 // ── PERIM SIDES ──
 function setPerimMode(mode){
@@ -2033,6 +2708,47 @@ function calculate(){
     return;
   }
 
+  if(calcMode==='vol'){
+    const V=parseFloat(document.getElementById('vol_v')?.value);
+    const Hmm=parseFloat(document.getElementById('vol_h')?.value);
+    const Tmm=parseFloat(document.getElementById('vol_t')?.value);
+    const sidesVal=document.getElementById('vol_sides')?.value||'2';
+    if(!V||V<=0||!Hmm||Hmm<=0||!Tmm||Tmm<=0){
+      rc.innerHTML='<div class="error-msg">Введите объём, высоту и толщину</div>';return;
+    }
+    const H=Hmm/1e3, T=Tmm/1e3;
+    const L=V/(H*T);
+    let S, sidesLabel;
+    if(sidesVal==='perim'){
+      S=2*(H+T)*L; sidesLabel='Периметр сечения';
+    } else {
+      const n=parseInt(sidesVal);
+      S=n*H*L; sidesLabel=n+' '+(n===1?'сторона':n<5?'стороны':'сторон');
+    }
+    const gF=S*qty;
+    lastResult={formwork:gF,concVol:V*qty,typeName:TYPES[current].name,typeKey:current,qty,
+      formula:buildFormula('vol',null,{V,H,T,L,S,sides:sidesVal}),
+      params:[
+        {label:'Объём бетона',value:V.toFixed(3)+' м³'},
+        {label:'Высота элемента',value:Hmm+' мм'},
+        {label:'Толщина элемента',value:Tmm+' мм'},
+        {label:'Расчётная длина',value:L.toFixed(2)+' м'},
+        {label:'Сторон опалубки',value:sidesLabel},
+      ]};
+    if(lastResult){const rb=getRebarResult();if(rb){lastResult.rebar=rb;lastResult.rebarKg=rb.totalKg;lastResult.wireKg=rb.wireKg;}}
+    const dets=[
+      {l:'Объём',v:V.toFixed(3)+' м³'},
+      {l:'Высота',v:Hmm+' мм'},
+      {l:'Толщина',v:Tmm+' мм'},
+      {l:'Длина',v:L.toFixed(2)+' м'},
+      {l:'Стороны',v:sidesLabel},
+      {l:'Опалубка (1 эл.)',v:S.toFixed(3)+' м²'},
+    ];
+    showResult({slabTotal:S,concVol:V},dets,0,V*qty,gF,V*qty,qty,false,TYPES[current]?.name||'Элемент',rc);
+    if(saveMode) autoSaveToJournal();
+    return;
+  }
+
   // DIMS
   const t=TYPES[current];const vals={};let hasError=false;
   for(const f of t.fields){const v=parseFloat(document.getElementById(f.id)?.value);if(!v||v<=0){hasError=true;document.getElementById(f.id).style.color='var(--red)';}else{document.getElementById(f.id).style.color='';vals[f.id]=v;}}
@@ -2090,6 +2806,16 @@ function showResult(res,details,bF,bV,gF,gV,qty,_hasBeams,header,rc){
     <div class="result-details-grid">${detCells}</div>
     ${beamHtml}
     ${formulaHtml}
+    ${(function(){if(!_rebarPct||!lastResult||!lastResult.concVol)return'';
+      const vol=(lastResult.concVol||0)*(lastResult.qty||1);
+      const r=calcRebarFromPct(_rebarPct,vol);if(!r)return'';
+      return '<div style="padding:12px 16px;border-top:1px solid var(--separator)">'
+        +'<div style="font-size:11px;font-weight:700;color:#D97706;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px">Армирование µ='+_rebarPct+'%</div>'
+        +'<div style="display:flex;gap:16px;flex-wrap:wrap">'
+        +'<div><div style="font-size:20px;font-weight:700;color:#D97706">'+r.mArm.toFixed(1)+'<span style="font-size:12px;margin-left:2px">кг</span></div><div style="font-size:10px;color:var(--label2)">арматура</div></div>'
+        +'<div><div style="font-size:20px;font-weight:700;color:#D97706">'+(r.mArm/1000).toFixed(3)+'<span style="font-size:12px;margin-left:2px">т</span></div><div style="font-size:10px;color:var(--label2)">арматура</div></div>'
+        +'<div><div style="font-size:20px;font-weight:700;color:var(--label)">'+r.wire.toFixed(1)+'<span style="font-size:12px;margin-left:2px">кг</span></div><div style="font-size:10px;color:var(--label2)">проволока</div></div>'
+        +'</div></div>';})()}
   </div>`;
 
   // Action buttons below calc button (already in DOM as #result-actions)
@@ -2131,7 +2857,7 @@ function autoSaveToJournal(){
   doSave('calc-save');
 }
 
-function resetForm(){beams=[];beamCounter=0;lastResult=null;qty=1;sides=[];sideCounter=0;calcMode='dims';document.getElementById('result-container').innerHTML='';renderPanel();}
+function resetForm(){lastResult=null;qty=1;sides=[];sideCounter=0;calcMode='dims';document.getElementById('result-container').innerHTML='';renderPanel();}
 
 // ── SAVE PANEL ──
 const saveState={};
@@ -2280,7 +3006,33 @@ function doSave(pid){
   if(!result){if(pid==='rebar-save'&&lastResult){result={...lastResult};}else return;}
 
   const b=db.buildings.find(x=>x.id==st.building);if(!b)return;
-  b.entries.push({id:Date.now()+''+Math.floor(Math.random()*9999),mark:st.mark,type:result.typeName,typeKey:result.typeKey||current,formwork:result.formwork,concVol:result.concVol,qty:result.qty||1,params:result.params||null,formula:result.formula||null,concreteClass:document.getElementById('sp-class-'+pid)?.value||null,water:document.getElementById('sp-water-'+pid)?.value||null,frost:document.getElementById('sp-frost-'+pid)?.value||null,grade:document.getElementById('sp-grade-'+pid)?.value||null,rebar:result.rebar||null,rebarKg:result.rebarKg||0,wireKg:result.wireKg||0,date:new Date().toLocaleDateString('ru-RU')});
+  const _elemNameVal=document.getElementById('sp-elem-name-calc-save')?.value?.trim()||'';
+  b.entries.push({id:Date.now()+''+Math.floor(Math.random()*9999),mark:st.mark,type:result.typeName,typeKey:result.typeKey||current,customName:_elemNameVal||null,formwork:result.formwork,concVol:result.concVol,qty:result.qty||1,params:result.params||null,formula:result.formula||null,concreteClass:document.getElementById('sp-class-'+pid)?.value||null,water:document.getElementById('sp-water-'+pid)?.value||null,frost:document.getElementById('sp-frost-'+pid)?.value||null,grade:document.getElementById('sp-grade-'+pid)?.value||null,rebar:result.rebar||null,rebarKg:result.rebarKg||0,wireKg:result.wireKg||0,date:new Date().toLocaleDateString('ru-RU')});
+  // Save rebar % as separate entry
+  if(_rebarPct>0&&result.concVol>0&&result.typeKey!=='rebar'){
+    const vol=(result.concVol||0)*(result.qty||1);
+    const rb=calcRebarFromPct(_rebarPct,vol);
+    if(rb&&rb.mArm>0){
+      const elemN=document.getElementById('sp-elem-name-calc-save')?.value?.trim()||result.typeName||'Элемент';
+      const rName='Армирование: '+elemN+' (µ='+_rebarPct+'%)';
+      b.entries.push({id:Date.now()+'r'+Math.floor(Math.random()*9999),mark:st.mark,
+        type:'Арматура',typeKey:'rebar',formwork:0,concVol:0,qty:1,
+        customName:rName,
+        params:[
+          {label:'Класс арматуры', value:_rebarPctClass},
+          {label:'Диаметр', value:'Ø'+_rebarPctDiam+' мм'},
+          {label:'Класс бетона', value:_rebarPctConc||(document.getElementById('sp-class-calc-save')?.value||'—')},
+          {label:'Процент армирования µ', value:_rebarPct+'%'},
+          {label:'Объём бетона', value:vol.toFixed(3)+' м³'},
+          {label:'Масса арматуры', value:rb.mArm.toFixed(1)+' кг'},
+          {label:'Вязальная проволока', value:rb.wire.toFixed(1)+' кг'},
+        ],
+        formula:'M = V×µ×ρ = '+vol.toFixed(3)+'×'+_rebarPct+'/100×7850 = '+rb.mArm.toFixed(1)+' кг',
+        rebar:{items:[{klass:_rebarPctClass,diam:_rebarPctDiam,kg:rb.mArm,name:rName}],totalKg:rb.mArm,wireKg:rb.wire},
+        rebarKg:rb.mArm,wireKg:rb.wire,date:new Date().toLocaleDateString('ru-RU'),
+        concreteClass:null,water:null,frost:null,grade:null});
+    }
+  }
   saveDB();
   const btn=document.getElementById('sp-save-btn-'+pid);
   if(btn){
@@ -2409,7 +3161,7 @@ function renderEditModal(mode){
   const isStair=typeKey==='stair';
   const modeCols=isStair?2:3;
   const areaBtn=isStair?'':`<button class="edit-mode-btn ${mode==='area'?'active':''}" onclick="renderEditModal('area')">▦ Площадь</button>`;
-  const modeBar=`<div class="edit-mode-bar" style="grid-template-columns:repeat(${modeCols},1fr)">
+  const modeBar=`<div class="edit-mode-bar" style="grid-template-columns:repeat(${isStair?2:3},1fr)">
     <button class="edit-mode-btn ${mode==='dims'?'active':''}" onclick="renderEditModal('dims')">📏 Размеры</button>
     ${areaBtn}
     <button class="edit-mode-btn ${mode==='perim'?'active':''}" onclick="renderEditModal('perim')">📐 Периметр</button>
@@ -2485,7 +3237,33 @@ function renderEditModal(mode){
     <button class="modal-btn-primary" onclick="doSaveParamsEdit(${bId},'${eId}')">Сохранить</button>
     <button class="modal-btn-primary green" onclick="doRecalcEditMode(${bId},'${eId}')">Пересчитать</button>
     <button class="modal-btn-primary orange" onclick="openFitModal('journal','${eId}','${bId}')">Подогнать</button>
-    <button class="modal-btn-secondary" onclick="closeModalAndScrollTo('${eId}')">← Назад к списку</button>`);
+    <button class="modal-btn-secondary" onclick="closeModalAndScrollTo('${eId}')">← Назад к списку</button>
+    ${(()=>{
+      // Show rebar fields if entry has linked rebar entry
+      const b=db.buildings.find(x=>x.id==bId);if(!b)return'';
+      const eName=e.customName||e.type||'';
+      const linkedR=b.entries.find(re=>re.typeKey==='rebar'&&re.mark===e.mark&&re.customName&&re.customName.includes(eName));
+      if(!linkedR&&!(e.rebarKg>0))return'';
+      const curPct=linkedR?.params?.find(p=>p.label==='Процент армирования µ')?parseFloat(linkedR.params.find(p=>p.label==='Процент армирования µ').value)||0:0;
+      const curClass=linkedR?.params?.find(p=>p.label==='Класс арматуры')?.value||'А500С';
+      const curDiam=parseInt(linkedR?.params?.find(p=>p.label==='Диаметр')?.value)||16;
+      const klassOpts=['А240','А500С','А500СП','А600'].map(k=>'<option value="'+k+'"'+(k===curClass?' selected':'')+'>'+k+'</option>').join('');
+      const diamOpts=[6,8,10,12,14,16,18,20,22,25,28,32].map(d=>'<option value="'+d+'"'+(d===curDiam?' selected':'')+'>Ø'+d+'</option>').join('');
+      return '<div style="margin-top:12px;padding:12px 14px;background:rgba(245,158,11,0.06);border-radius:12px;border:1.5px solid rgba(245,158,11,0.2)">'
+        +'<div style="font-size:13px;font-weight:700;color:#D97706;margin-bottom:10px">Арматура — пересчитать (µ%)</div>'
+        +'<div style="display:grid;grid-template-columns:80px 1fr 90px;gap:8px;align-items:end;margin-bottom:8px">'
+        +'<div><div style="font-size:11px;color:var(--label2);margin-bottom:3px">µ, %</div>'
+        +'<input type="number" id="edit-rebar-pct" value="'+curPct+'" placeholder="0.0" min="0" max="10" step="0.1"'
+        +' style="width:100%;padding:8px;border-radius:9px;border:1.5px solid var(--separator);background:var(--surface);font-family:inherit;font-size:15px;color:var(--label);outline:none;box-sizing:border-box"></div>'
+        +'<div><div style="font-size:11px;color:var(--label2);margin-bottom:3px">Класс</div>'
+        +'<select id="edit-rebar-class" style="width:100%;padding:8px;border-radius:9px;border:1.5px solid var(--separator);background:var(--surface);font-family:inherit;font-size:13px;color:var(--label);outline:none">'+klassOpts+'</select></div>'
+        +'<div><div style="font-size:11px;color:var(--label2);margin-bottom:3px">Ø мм</div>'
+        +'<select id="edit-rebar-diam" style="width:100%;padding:8px;border-radius:9px;border:1.5px solid var(--separator);background:var(--surface);font-family:inherit;font-size:13px;color:var(--label);outline:none">'+diamOpts+'</select></div>'
+        +'</div>'
+        +'<div style="font-size:12px;color:var(--label2)">Текущий вес: '+(linkedR?.rebarKg||e.rebarKg||0).toFixed(1)+' кг · обновится при пересчёте</div>'
+        +'</div>';
+    })()}
+    `);
 }
 
 function doSaveParamsEdit(bId,eId){
@@ -2535,7 +3313,16 @@ function doRecalcEditMode(bId,eId){
     const _tLbl=({wall:'Толщина стены',slab:'Толщина плиты',cover:'Толщина',foundation:'Толщина плиты'})[typeKey]||'Толщина';
     newParams=[{label:'Площадь элемента',value:A.toFixed(2)+' м²'},{label:_tLbl,value:Tmm+' мм'}];
   }
-  _pendingRecalc={bId,eId,newF,newV,newFormula,newParams,qty};
+  _pendingRecalc={bId,eId,newF,newV,newFormula,newParams,qty,savedMeta:{
+    customName:document.getElementById('ei-customname')?.value?.trim()||null,
+    concreteClass:document.getElementById('ei-class')?.value||null,
+    water:document.getElementById('ei-water')?.value||null,
+    frost:document.getElementById('ei-frost')?.value||null,
+    grade:document.getElementById('ei-grade')?.value||null,
+    rebarPct:parseFloat(document.getElementById('edit-rebar-pct')?.value)||0,
+    rebarClass:document.getElementById('edit-rebar-class')?.value||'А500С',
+    rebarDiam:parseInt(document.getElementById('edit-rebar-diam')?.value)||16,
+  }};
   openModal('Подтвердить пересчёт',`
     <p class="modal-hint">${e.customName||e.type} · отм. ${e.mark}</p>
     <div class="diff-grid">
@@ -2547,19 +3334,52 @@ function doRecalcEditMode(bId,eId){
 }
 function doRecalcEntry(){
   if(!_pendingRecalc)return;
-  const{bId,eId,newF,newV,newFormula,newParams,qty}=_pendingRecalc;
+  const{bId,eId,newF,newV,newFormula,newParams,qty,savedMeta}=_pendingRecalc;
   const b=db.buildings.find(b=>b.id==bId);if(!b)return;
   const e=b.entries.find(e=>e.id==eId);if(!e)return;
   e.formwork=newF;e.concVol=newV;e.formula=newFormula;e.params=newParams;e.qty=qty;
-  // Save name and concrete if editing from modal
-  const _nm=document.getElementById('ei-customname')?.value?.trim();
-  if(_nm!==undefined)e.customName=_nm||null;
-  const _cl=document.getElementById('ei-class')?.value;if(_cl!==undefined)e.concreteClass=_cl||null;
-  const _wt=document.getElementById('ei-water')?.value;if(_wt!==undefined)e.water=_wt||null;
-  const _fr=document.getElementById('ei-frost')?.value;if(_fr!==undefined)e.frost=_fr||null;
-  const _gr=document.getElementById('ei-grade')?.value;if(_gr!==undefined)e.grade=_gr||null;
+  // Apply metadata saved at the moment doRecalcEditMode was called
+  if(savedMeta){
+    if(savedMeta.customName!==undefined)e.customName=savedMeta.customName||null;
+    if(savedMeta.concreteClass!==undefined)e.concreteClass=savedMeta.concreteClass||null;
+    if(savedMeta.water!==undefined)e.water=savedMeta.water||null;
+    if(savedMeta.frost!==undefined)e.frost=savedMeta.frost||null;
+    if(savedMeta.grade!==undefined)e.grade=savedMeta.grade||null;
+  }
+  // ── Update linked rebar entry ──
+  const pct = savedMeta?.rebarPct||0;
+  if(pct>0){
+    const newVol = newV * (qty||1);
+    const mArm  = newVol * pct / 100 * 7850;
+    const wire  = +(mArm * 0.012).toFixed(1);
+    // Update rebar fields on the concrete entry itself
+    e.rebarKg = +mArm.toFixed(1);
+    e.wireKg  = wire;
+    // Find linked rebar entry: same mark, typeKey=rebar, name contains this element's name
+    const eName = savedMeta?.customName || e.customName || e.type || '';
+    const linkedRebar = b.entries.find(re =>
+      re.typeKey === 'rebar' &&
+      re.mark === e.mark &&
+      re.customName && re.customName.includes(eName)
+    );
+    if(linkedRebar){
+      linkedRebar.rebarKg  = +mArm.toFixed(1);
+      linkedRebar.wireKg   = wire;
+      linkedRebar.formula  = 'M = V×µ×ρ = '+newVol.toFixed(3)+'×'+pct+'/100×7850 = '+mArm.toFixed(1)+' кг';
+      linkedRebar.customName = 'Армирование: '+eName+' (µ='+pct+'%, '+(savedMeta.rebarClass||'А500С')+' Ø'+(savedMeta.rebarDiam||16)+' мм)';
+      linkedRebar.params = [
+        {label:'Класс арматуры',       value: savedMeta.rebarClass||'А500С'},
+        {label:'Диаметр',              value: 'Ø'+(savedMeta.rebarDiam||16)+' мм'},
+        {label:'Класс бетона',         value: e.concreteClass||savedMeta.concreteClass||''},
+        {label:'Процент армирования µ', value: pct+'%'},
+        {label:'Объём бетона',         value: newVol.toFixed(3)+' м³'},
+        {label:'Масса арматуры',       value: mArm.toFixed(1)+' кг'},
+        {label:'Вязальная проволока',  value: wire+' кг'},
+      ];
+    }
+  }
+
   _pendingRecalc=null;saveDB();renderJournal(true);
-  // Stay in edit modal, show updated data
   editEntry(bId,eId);
   showToast('✓ Пересчитано и сохранено');
 }
@@ -2930,7 +3750,7 @@ document.addEventListener('touchstart',e=>{
 },{passive:true});
 
 document.addEventListener('touchmove',e=>{
-  if(!_swipe.id||_dt.active)return;
+  if(!_swipe.id||(_dt.active&&_dt.ghost))return;
   const inner=document.getElementById(_swipe.id);if(!inner)return;
   const dx=e.touches[0].clientX-_swipe.startX;
   const dy=e.touches[0].clientY-_swipe.startY;
@@ -3268,17 +4088,14 @@ function renderOpeningsModal(bId,eId){
 }
 
 function calcOpeningFormwork(w,h,t,isWall){
-  // Opалубка проёма:
-  // Стена: периметр×2 стороны + торцы по толщине
-  // Перекрытие: периметр×1 сторона + торцы
+  // Опалубка проёма: только откосы по периметру × глубина (толщина стены/плиты)
+  // Стена: 4 грани откоса = периметр проёма × толщину стены
+  // Перекрытие: периметр × толщина + площадь нижней грани проёма
   const W=w/1e3,H=h/1e3,T=t/1e3;
   if(isWall){
-    // Боковые откосы (4 грани): 2×H×T (левый+правый) + 2×W×T (верх+низ опалубка торцов) + 2×W×H (две пов-ти стены)
-    // Принято: периметр откоса × глубину откоса (толщину стены) + проекция на 2 стороны
-    return 2*(W+H)*T + 2*W*H; // откосы + проёмы в стене
+    return 2*(W+H)*T; // откосы — 4 грани × толщину стены
   } else {
-    // Перекрытие: периметр × толщина + площадь низа
-    return 2*(W+H)*T + W*H;
+    return 2*(W+H)*T + W*H; // откосы + низ проёма
   }
 }
 
@@ -3445,7 +4262,9 @@ function toggleVorEntry(bId,gi,eId){
 function addVorGroup(bId){
   const s=_vorState[bId];if(!s)return;
   s.counter=(s.counter||1)+1;
-  const _allT=[...new Set(entries.map(e=>e.typeKey).filter(Boolean))];s.markGroups.push({id:s.counter,name:'',marks:[],entries:[],types:[..._allT]});
+  const b=db.buildings.find(b=>String(b.id)===String(bId));
+  const _allT=b?[...new Set(b.entries.filter(e=>!e.isPlaceholder).map(e=>e.typeKey).filter(Boolean))]:[];
+  s.markGroups.push({id:s.counter,name:'',marks:[],entries:[],types:[..._allT]});
   renderVOR(bId);
 }
 
@@ -3657,10 +4476,6 @@ function showToast(msg){
   document.body.appendChild(t);setTimeout(()=>t.remove(),2800);
 }
 
-// ── ICON BTN ──
-const iconBtnStyle='.icon-btn{background:transparent;border:none;cursor:pointer;font-size:13px;padding:2px 4px;opacity:0.5;transition:opacity 0.15s;line-height:1;}.icon-btn:hover{opacity:1;}';
-const style=document.createElement('style');style.textContent=iconBtnStyle;document.head.appendChild(style);
-
 // ── THEME ──
 function setTheme(theme){
   document.documentElement.dataset.theme=theme;
@@ -3671,15 +4486,136 @@ function setTheme(theme){
 function updateThemeButtons(){
   const isDark=document.documentElement.dataset.theme==='dark';
   const lb=document.getElementById('theme-light-btn');
-  const db=document.getElementById('theme-dark-btn');
-  if(!lb||!db)return;
+  const darkBtn=document.getElementById('theme-dark-btn');
+  if(!lb||!darkBtn)return;
   if(isDark){
     lb.style.background='transparent';lb.style.color='var(--label2)';lb.style.boxShadow='none';
-    db.style.background='var(--surface)';db.style.color='var(--label)';db.style.boxShadow='0 1px 3px rgba(0,0,0,0.15)';
+    darkBtn.style.background='var(--surface)';darkBtn.style.color='var(--label)';darkBtn.style.boxShadow='0 1px 3px rgba(0,0,0,0.15)';
   } else {
     lb.style.background='var(--surface)';lb.style.color='var(--label)';lb.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';
-    db.style.background='transparent';db.style.color='var(--label2)';db.style.boxShadow='none';
+    darkBtn.style.background='transparent';darkBtn.style.color='var(--label2)';darkBtn.style.boxShadow='none';
   }
+}
+
+function updateVolFormula(){
+  const V=parseFloat(document.getElementById('vol_v')?.value)||0;
+  const Hmm=parseFloat(document.getElementById('vol_h')?.value)||0;
+  const Tmm=parseFloat(document.getElementById('vol_t')?.value)||0;
+  const sides=document.getElementById('vol_sides')?.value||'2';
+  const box=document.getElementById('vol-formula-box');
+  const txt=document.getElementById('vol-formula-text');
+  if(!box||!txt)return;
+  if(!V||!Hmm||!Tmm){box.style.display='none';return;}
+  const H=Hmm/1e3, T=Tmm/1e3;
+  const L=V/(H*T);
+  let S, sLabel;
+  if(sides==='perim'){S=2*(H+T)*L;sLabel='2×('+H.toFixed(3)+'+'+T.toFixed(3)+')';}
+  else{const n=parseInt(sides);S=n*H*L;sLabel=n+'×'+H.toFixed(3);}
+  const n2=v=>+v.toFixed(3);
+  txt.innerHTML=
+    'L = V / (H × T) = '+V.toFixed(3)+' / ('+H.toFixed(3)+'×'+T.toFixed(3)+') = <b>'+L.toFixed(2)+' м</b><br>'
+    +'S = '+sLabel+'×L = '+sLabel+'×'+L.toFixed(2)+' = <b>'+S.toFixed(2)+' м²</b><br>'
+    +'V = <b>'+V.toFixed(3)+' м³</b>';
+  box.style.display='';
+}
+
+// ── SAVE REMINDER ──
+let _reminderInterval = 0;   // minutes, 0 = off
+let _reminderTimer    = null;
+let _reminderOptions  = [5, 10, 15, 20, 25, 30];
+let _unsavedChanges   = false;
+
+function initReminder(){
+  const saved = localStorage.getItem('betonator_reminder');
+  if(saved){
+    _reminderInterval = parseInt(saved)||0;
+    if(_reminderInterval>0) startReminderTimer();
+  }
+  renderReminderUI();
+}
+
+function renderReminderUI(){
+  const sw  = document.getElementById('reminder-toggle-switch');
+  const txt = document.getElementById('reminder-status-text');
+  const row = document.getElementById('reminder-interval-row');
+  const chips = document.getElementById('reminder-chips');
+  if(!sw) return;
+
+  const on = _reminderInterval > 0;
+  sw.classList.toggle('on', on);
+  if(txt) txt.textContent = on ? 'Каждые '+_reminderInterval+' мин' : 'Выключено';
+  if(row) row.style.display = on ? '' : 'none';
+
+  if(chips){
+    chips.innerHTML = _reminderOptions.map(m =>
+      '<button onclick="setReminderInterval('+m+')" style="padding:7px 14px;border-radius:20px;border:1.5px solid '
+      +(_reminderInterval===m?'var(--blue)':'var(--separator)')
+      +';background:'+(_reminderInterval===m?'var(--blue-light)':'var(--surface)')
+      +';color:'+(_reminderInterval===m?'var(--blue)':'var(--label2)')
+      +';font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">'+m+' мин</button>'
+    ).join('');
+  }
+}
+
+function toggleSaveReminder(){
+  if(_reminderInterval > 0){
+    // Turn off
+    setReminderInterval(0);
+  } else {
+    // Turn on with default 10 min
+    setReminderInterval(10);
+  }
+}
+
+function setReminderInterval(minutes){
+  _reminderInterval = minutes;
+  localStorage.setItem('betonator_reminder', minutes);
+  stopReminderTimer();
+  if(minutes > 0) startReminderTimer();
+  renderReminderUI();
+  if(minutes > 0) showToast('⏰ Напоминание каждые '+minutes+' мин');
+}
+
+function startReminderTimer(){
+  stopReminderTimer();
+  _reminderTimer = setInterval(()=>{
+    showSaveReminderBanner();
+  }, _reminderInterval * 60 * 1000);
+}
+
+function stopReminderTimer(){
+  if(_reminderTimer){ clearInterval(_reminderTimer); _reminderTimer=null; }
+}
+
+function showSaveReminderBanner(){
+  // Show a persistent toast/banner
+  haptic('medium');
+  const banner = document.createElement('div');
+  banner.id = 'save-reminder-banner';
+  banner.style.cssText = 'position:fixed;bottom:90px;left:16px;right:16px;z-index:9999;'
+    +'background:linear-gradient(135deg,#FF9500,#FF6B00);border-radius:16px;'
+    +'padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;'
+    +'box-shadow:0 8px 32px rgba(255,149,0,0.4);animation:slideUp 0.3s ease';
+  banner.innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px">'
+    +'<span style="font-size:22px">💾</span>'
+    +'<div>'
+    +'<div style="font-size:14px;font-weight:700;color:#fff">Не забудь сохранить проект!</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:2px">Прошло '+_reminderInterval+' мин с последнего напоминания</div>'
+    +'</div></div>'
+    +'<button onclick="dismissSaveReminder()" style="background:rgba(255,255,255,0.25);border:none;border-radius:10px;'
+    +'color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:8px 14px;flex-shrink:0">OK</button>';
+
+  // Remove existing banner
+  document.getElementById('save-reminder-banner')?.remove();
+  document.body.appendChild(banner);
+
+  // Auto-dismiss after 15 seconds
+  setTimeout(()=>{ banner?.remove(); }, 15000);
+}
+
+function dismissSaveReminder(){
+  document.getElementById('save-reminder-banner')?.remove();
 }
 
 // ── HAPTIC + VISUAL FEEDBACK ──
@@ -4096,7 +5032,7 @@ function renderEstResults(matched, b, types, marks, conditions){
 
 function saveEstimate(totalF, totalV, count){
   if(!_est._lastResult){ showToast('⚠ Нет результатов'); return; }
-  const { b, filterDesc, formulaStr } = _est._lastResult;
+  const { b, filterDesc } = _est._lastResult;
   const defaultName = filterDesc.split('·')[0].trim();
   openModal('Сохранить в смету',`
     <p class="modal-hint">Здание: <strong>${b.name}</strong></p>
@@ -4104,26 +5040,6 @@ function saveEstimate(totalF, totalV, count){
     <button class="modal-btn-primary green" onclick="doSaveEstimate()">Сохранить</button>
     <button class="modal-btn-secondary" onclick="closeModalNow()">Отмена</button>
   `);
-  return;
-
-  let bEst = estDB.estimates.find(e => e.buildingId === String(b.id));
-  if(!bEst){
-    bEst = { buildingId: String(b.id), buildingName: b.name, items: [] };
-    estDB.estimates.push(bEst);
-  }
-  bEst.items.push({
-    id: Date.now(),
-    name: estName,
-    filterDesc,
-    formulaStr,
-    formwork: totalF,
-    concVol: totalV,
-    count,
-    date: new Date().toLocaleDateString('ru-RU')
-  });
-  saveEstDB();
-  showToast('✓ Добавлено в смету: ' + b.name);
-  renderEstSaved();
 }
 
 function doSaveEstimate(){
