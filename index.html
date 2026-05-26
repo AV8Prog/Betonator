@@ -695,7 +695,87 @@ body {
 }
 .bf-btn.add { background:var(--blue-light); color:var(--blue); }
 .bf-btn.del { background:var(--red-light); color:var(--red); }
+.bf-btn.sel { background:var(--accent-light); color:var(--accent); }
 .bf-btn:active { opacity:0.7; }
+
+/* ── Multi-select mode ── */
+.sel-checkbox {
+  flex-shrink:0; width:22px; height:22px; border-radius:50%;
+  border:2px solid var(--label3); background:var(--surface);
+  display:flex; align-items:center; justify-content:center;
+  margin-right:10px; transition:all 0.18s; position:relative;
+}
+.sel-checkbox.checked {
+  background:var(--blue); border-color:var(--blue);
+}
+.sel-checkbox.checked::after {
+  content:''; width:6px; height:11px;
+  border:solid #fff; border-width:0 2px 2px 0;
+  transform:rotate(45deg) translate(-1px,-1px);
+}
+.mark-sel-checkbox {
+  flex-shrink:0; width:22px; height:22px; border-radius:6px;
+  border:2px solid var(--label3); background:var(--surface);
+  display:flex; align-items:center; justify-content:center;
+  margin-right:8px; transition:all 0.18s;
+}
+.mark-sel-checkbox.checked, .mark-sel-checkbox.partial {
+  background:var(--accent); border-color:var(--accent);
+}
+.mark-sel-checkbox.checked::after {
+  content:''; width:6px; height:11px;
+  border:solid #fff; border-width:0 2px 2px 0;
+  transform:rotate(45deg) translate(-1px,-1px);
+}
+.mark-sel-checkbox.partial::after {
+  content:''; width:10px; height:2px; background:#fff; border-radius:1px;
+}
+.building-card.selection-mode .entry-item { cursor:pointer; }
+.building-card.selection-mode .entry-left button,
+.building-card.selection-mode .entry-left .entry-params-btn { pointer-events:none; }
+.building-card.selection-mode .entry-swipe-inner.selected { background:var(--blue-light); }
+.building-card.selection-mode .entry-swipe-inner.selected .entry-item { background:transparent !important; }
+.building-card.selection-mode .entry-actions-revealed { display:none !important; }
+.building-card.selection-mode .entry-swipe-inner { transform:translateX(0) !important; }
+
+.bulk-action-bar {
+  position:fixed; left:12px; right:12px;
+  bottom:calc(72px + env(safe-area-inset-bottom));
+  background:var(--surface); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg); padding:12px;
+  z-index:120; display:none;
+  transform:translateY(20px); opacity:0;
+  transition:transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s;
+  border:0.5px solid var(--separator);
+}
+.bulk-action-bar.visible { display:block; transform:translateY(0); opacity:1; }
+.bulk-action-bar .bulk-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:10px; padding:0 4px;
+}
+.bulk-action-bar .bulk-count {
+  font-size:15px; font-weight:600; color:var(--label);
+}
+.bulk-action-bar .bulk-count em {
+  font-style:normal; color:var(--blue); font-weight:700;
+}
+.bulk-action-bar .bulk-close {
+  background:none; border:none; color:var(--label2);
+  font-size:14px; font-weight:600; cursor:pointer; padding:6px 10px;
+  border-radius:8px; font-family:inherit;
+}
+.bulk-action-bar .bulk-close:active { background:var(--bg3); }
+.bulk-action-bar .bulk-btns { display:flex; gap:8px; }
+.bulk-action-bar .bulk-btn {
+  flex:1; padding:13px; border-radius:10px; border:none;
+  font-family:inherit; font-size:15px; font-weight:600;
+  cursor:pointer; transition:all 0.15s;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.bulk-action-bar .bulk-btn.move { background:var(--blue); color:#fff; }
+.bulk-action-bar .bulk-btn.del { background:var(--red); color:#fff; }
+.bulk-action-bar .bulk-btn:active { opacity:0.85; transform:scale(0.98); }
+.bulk-action-bar .bulk-btn:disabled { opacity:0.45; cursor:not-allowed; }
 
 /* grand summary */
 .grand-card {
@@ -1445,6 +1525,24 @@ input, select, textarea {
   </div>
 </div>
 
+<!-- BULK ACTION BAR -->
+<div class="bulk-action-bar" id="bulk-action-bar">
+  <div class="bulk-header">
+    <div class="bulk-count">Выбрано: <em id="bulk-count">0</em></div>
+    <button class="bulk-close" onclick="exitSelectionMode()">Отмена</button>
+  </div>
+  <div class="bulk-btns">
+    <button class="bulk-btn move" id="bulk-move-btn" onclick="bulkMoveOpen()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7,10 12,5 17,10"/><polyline points="7,14 12,19 17,14"/><line x1="12" y1="5" x2="12" y2="19"/></svg>
+      Перенести
+    </button>
+    <button class="bulk-btn del" id="bulk-del-btn" onclick="bulkDeleteOpen()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+      Удалить
+    </button>
+  </div>
+</div>
+
 <!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal-sheet" id="modal-sheet">
@@ -1694,6 +1792,8 @@ function doImportProject(replace){
 
 // ── NAV ──
 function showPage(name){
+  // Reset selection mode when leaving journal
+  if(name!=='journal'&&selectionMode){selectionMode=null;updateBulkBar();}
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -3057,6 +3157,196 @@ function openModal(title,bodyHTML){
 function closeModalNow(){document.getElementById('modal-overlay').classList.remove('open');}
 function closeModal(e){if(e.target===document.getElementById('modal-overlay'))closeModalNow();}
 
+// ── MULTI-SELECT MODE ──
+// selectionMode: { bId: <building id>, selected: Set<entryId string> } or null
+let selectionMode=null;
+
+function isInSelection(eId){
+  return selectionMode && selectionMode.selected.has(String(eId));
+}
+function updateBulkBar(){
+  const bar=document.getElementById('bulk-action-bar');
+  if(!bar)return;
+  if(!selectionMode){bar.classList.remove('visible');return;}
+  const n=selectionMode.selected.size;
+  document.getElementById('bulk-count').textContent=n;
+  document.getElementById('bulk-move-btn').disabled=n===0;
+  document.getElementById('bulk-del-btn').disabled=n===0;
+  bar.classList.add('visible');
+}
+function enterSelectionMode(bId){
+  selectionMode={bId:String(bId),selected:new Set()};
+  renderJournal(true);
+  // Force open building & all its marks so checkboxes are visible
+  requestAnimationFrame(()=>{
+    document.getElementById('bbody-'+bId)?.classList.add('open');
+    document.getElementById('bchev-'+bId)?.classList.add('open');
+    document.querySelectorAll(`#bbody-${bId} .mark-body`).forEach(el=>{
+      el.classList.add('open');
+      const chId=el.id.replace('mbody-','mchev-');
+      document.getElementById(chId)?.classList.add('open');
+    });
+    // Scroll building into view nicely
+    document.getElementById('bbody-'+bId)?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  updateBulkBar();
+}
+function exitSelectionMode(){
+  selectionMode=null;
+  renderJournal(true);
+  updateBulkBar();
+}
+function toggleEntrySelection(eId,ev){
+  if(ev){ev.stopPropagation();ev.preventDefault();}
+  if(!selectionMode)return;
+  const k=String(eId);
+  if(selectionMode.selected.has(k))selectionMode.selected.delete(k);
+  else selectionMode.selected.add(k);
+  // Update DOM minimally without full re-render
+  const inner=document.querySelector(`.entry-swipe-inner[data-eid="${k}"]`);
+  if(inner){
+    inner.classList.toggle('selected',selectionMode.selected.has(k));
+    const cb=inner.querySelector('.sel-checkbox');
+    if(cb)cb.classList.toggle('checked',selectionMode.selected.has(k));
+  }
+  updateMarkCheckboxes();
+  updateBulkBar();
+}
+function updateMarkCheckboxes(){
+  if(!selectionMode)return;
+  const b=db.buildings.find(b=>String(b.id)===selectionMode.bId);
+  if(!b)return;
+  const byMark={};b.entries.forEach(e=>{if(e.isPlaceholder)return;const m=e.mark||'—';(byMark[m]=byMark[m]||[]).push(e);});
+  document.querySelectorAll('.mark-sel-checkbox').forEach(cb=>{
+    const mark=cb.getAttribute('data-mark');
+    const all=byMark[mark];if(!all)return;
+    const sel=all.filter(e=>selectionMode.selected.has(String(e.id))).length;
+    cb.classList.remove('checked','partial');
+    if(sel===all.length)cb.classList.add('checked');
+    else if(sel>0)cb.classList.add('partial');
+  });
+}
+function toggleMarkSelection(bId,mark,ev){
+  if(ev){ev.stopPropagation();}
+  if(!selectionMode)return;
+  const b=db.buildings.find(b=>String(b.id)===String(bId));if(!b)return;
+  const entries=b.entries.filter(e=>!e.isPlaceholder&&(e.mark||'—')===mark);
+  if(entries.length===0)return;
+  const allSel=entries.every(e=>selectionMode.selected.has(String(e.id)));
+  if(allSel){
+    entries.forEach(e=>selectionMode.selected.delete(String(e.id)));
+  } else {
+    entries.forEach(e=>selectionMode.selected.add(String(e.id)));
+  }
+  // Update affected entry rows in DOM
+  entries.forEach(e=>{
+    const inner=document.querySelector(`.entry-swipe-inner[data-eid="${String(e.id)}"]`);
+    if(inner){
+      const on=selectionMode.selected.has(String(e.id));
+      inner.classList.toggle('selected',on);
+      const cb=inner.querySelector('.sel-checkbox');
+      if(cb)cb.classList.toggle('checked',on);
+    }
+  });
+  updateMarkCheckboxes();
+  updateBulkBar();
+}
+function selectAllInBuilding(bId){
+  if(!selectionMode||String(selectionMode.bId)!==String(bId))return;
+  const b=db.buildings.find(b=>String(b.id)===String(bId));if(!b)return;
+  b.entries.filter(e=>!e.isPlaceholder).forEach(e=>selectionMode.selected.add(String(e.id)));
+  renderJournal(true);
+  updateBulkBar();
+}
+
+// ── BULK MOVE ──
+function bulkMoveOpen(){
+  if(!selectionMode||selectionMode.selected.size===0)return;
+  const n=selectionMode.selected.size;
+  // Build building options
+  const buildOpts=db.buildings.map(b=>`<option value="${b.id}" ${String(b.id)===selectionMode.bId?'selected':''}>${b.name}</option>`).join('');
+  openModal('Перенести '+n+' эл.',`
+    <p class="modal-hint">Выбрано элементов: <strong>${n}</strong><br>Укажите здание и отметку назначения.</p>
+    <div style="font-size:13px;color:var(--label2);margin-bottom:4px;font-weight:600">Здание</div>
+    <select class="modal-select" id="bm-building" onchange="bmUpdateMarks()">${buildOpts}</select>
+    <div style="font-size:13px;color:var(--label2);margin-bottom:4px;font-weight:600;margin-top:8px">Отметка</div>
+    <select class="modal-select" id="bm-mark"></select>
+    <input class="modal-input" id="bm-newmark" placeholder="Или введите новую отметку">
+    <button class="modal-btn-primary green" onclick="doBulkMove()">Перенести</button>
+    <button class="modal-btn-secondary" onclick="closeModalNow()">Отмена</button>`);
+  bmUpdateMarks();
+}
+function bmUpdateMarks(){
+  const sel=document.getElementById('bm-building');if(!sel)return;
+  const bId=sel.value;
+  const b=db.buildings.find(b=>String(b.id)===String(bId));
+  const ms=document.getElementById('bm-mark');if(!ms)return;
+  if(!b){ms.innerHTML='';return;}
+  const marks=[...new Set(b.entries.map(e=>e.mark).filter(m=>m))].sort((a,z)=>{
+    const na=parseFloat(a.replace(',','.')),nb=parseFloat(z.replace(',','.'));
+    if(!isNaN(na)&&!isNaN(nb))return na-nb;
+    if(!isNaN(na))return -1;if(!isNaN(nb))return 1;
+    return a.localeCompare(z,'ru');
+  });
+  ms.innerHTML='<option value="">— выберите —</option>'+marks.map(m=>`<option value="${m}">${m}</option>`).join('');
+}
+function doBulkMove(){
+  if(!selectionMode||selectionMode.selected.size===0)return;
+  const newMark=document.getElementById('bm-newmark')?.value?.trim();
+  const selMark=document.getElementById('bm-mark')?.value;
+  const targetMark=newMark||selMark;
+  if(!targetMark){showToast('⚠ Укажите отметку');return;}
+  const targetBId=document.getElementById('bm-building')?.value;
+  const targetB=db.buildings.find(b=>String(b.id)===String(targetBId));
+  if(!targetB){showToast('⚠ Здание не найдено');return;}
+  const srcB=db.buildings.find(b=>String(b.id)===selectionMode.bId);
+  if(!srcB)return;
+  const ids=new Set(selectionMode.selected);
+  let moved=0;
+  if(String(srcB.id)===String(targetB.id)){
+    // Same building — just update mark
+    srcB.entries.forEach(e=>{if(ids.has(String(e.id))){e.mark=targetMark;moved++;}});
+  } else {
+    // Different building — move entries across
+    const toMove=srcB.entries.filter(e=>ids.has(String(e.id)));
+    srcB.entries=srcB.entries.filter(e=>!ids.has(String(e.id)));
+    toMove.forEach(e=>{e.mark=targetMark;targetB.entries.push(e);moved++;});
+  }
+  saveDB();
+  closeModalNow();
+  const wasBId=selectionMode.bId;
+  selectionMode=null;
+  renderJournal();
+  updateBulkBar();
+  showToast('✓ Перенесено: '+moved+' эл. → '+targetB.name+' / '+targetMark);
+}
+
+// ── BULK DELETE ──
+function bulkDeleteOpen(){
+  if(!selectionMode||selectionMode.selected.size===0)return;
+  const n=selectionMode.selected.size;
+  openModal('Удалить элементы',`
+    <div style="background:var(--red-light);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:600;color:var(--red);margin-bottom:4px">Удалить ${n} эл. безвозвратно?</div>
+      <div style="font-size:13px;color:var(--label2);margin-top:4px">Действие нельзя отменить</div>
+    </div>
+    <button class="modal-btn-primary red" onclick="doBulkDelete()">Да, удалить ${n} эл.</button>
+    <button class="modal-btn-secondary" onclick="closeModalNow()">Отмена</button>`);
+}
+function doBulkDelete(){
+  if(!selectionMode||selectionMode.selected.size===0)return;
+  const b=db.buildings.find(b=>String(b.id)===selectionMode.bId);if(!b)return;
+  const ids=new Set(selectionMode.selected);
+  const n=ids.size;
+  b.entries=b.entries.filter(e=>!ids.has(String(e.id)));
+  saveDB();
+  closeModalNow();
+  selectionMode=null;
+  renderJournal();
+  updateBulkBar();
+  showToast('✓ Удалено: '+n+' эл.');
+}
+
 // ── JOURNAL MODALS ──
 function renameMark(bId,oldMark){
   openModal('Переименовать отметку',`
@@ -3559,6 +3849,7 @@ function renderJournal(keepState){
     return;
   }
   list.innerHTML=db.buildings.map(b=>{
+    const inSelMode=selectionMode&&String(selectionMode.bId)===String(b.id);
     const entries=b.entries.filter(e=>!e.isPlaceholder);
     const tF=entries.reduce((s,e)=>s+getEntryFormwork(e),0),tV=entries.reduce((s,e)=>s+e.concVol,0),tRebKg=entries.reduce((s,e)=>s+(e.rebarKg||0),0);
     const byType={};entries.forEach(e=>{if(!byType[e.type])byType[e.type]={f:0,v:0,kg:0,isRebar:e.typeKey==='rebar'};byType[e.type].f+=getEntryFormwork(e);byType[e.type].v+=e.concVol;byType[e.type].kg+=(e.rebarKg||0);});
@@ -3618,15 +3909,18 @@ function renderJournal(keepState){
               ${e.rebar?.items?.length?`<div style="font-size:11px;font-weight:700;color:#D97706;text-transform:uppercase;letter-spacing:0.4px;margin-top:8px;margin-bottom:4px">Арматура</div>`+''+e.rebar.items.map(r=>`<div class="ep-row"><span class="ep-lbl">${r.name||r.klass+' Ø'+r.diam+' мм'}</span><span class="ep-val" style="color:#D97706">${r.kg.toFixed(1)} кг</span></div>`).join('')+`<div class="ep-row"><span class="ep-lbl">Вязальная проволока</span><span class="ep-val">${e.wireKg||((e.rebarKg||0)*0.012).toFixed(1)} кг</span></div>`:''}
             </div>`:'';
           const swipeId='sw-'+safeId;
+          const eIsSelected=inSelMode&&selectionMode.selected.has(String(e.id));
+          const eClickHandler=inSelMode?`onclick="toggleEntrySelection('${e.id}',event)"`:'';
           return`<div class="entry-swipe-wrap" id="wrap-${safeId}" style="margin-bottom:4px">
-            <div class="entry-swipe-inner" id="${swipeId}"
+            <div class="entry-swipe-inner${eIsSelected?' selected':''}" id="${swipeId}"
               data-bid="${b.id}" data-eid="${e.id}" data-mark="${mark}"
-              ondragstart="onEntryDragStart(event,${b.id},'${e.id}')"
+              ${inSelMode?'':`ondragstart="onEntryDragStart(event,${b.id},'${e.id}')"
               ondragend="onEntryDragEnd(event)"
               ondragover="event.preventDefault()"
-              ondrop="onEntryDrop(event,${b.id},this.dataset.mark)"
-              draggable="true">
-              <div class="entry-item" style="${entryBg};flex-shrink:0;width:100%;padding:12px 16px">
+              ondrop="onEntryDrop(event,${b.id},this.dataset.mark)"`}
+              ${inSelMode?'':'draggable="true"'}>
+              <div class="entry-item" style="${entryBg};flex-shrink:0;width:100%;padding:12px 16px" ${eClickHandler}>
+                ${inSelMode?`<div class="sel-checkbox${eIsSelected?' checked':''}"></div>`:''}
                 <div class="entry-left" style="flex:1;min-width:0">
                   <div class="entry-name">${e.customName||tp+' №'+(idx+1)}${e.qty>1?' × '+e.qty+' шт.':''}</div>
                   <div class="entry-date">${e.date}</div>
@@ -3659,14 +3953,23 @@ function renderJournal(keepState){
       const emptyHint=realEntries.length===0?`<div style="padding:14px 16px;font-size:14px;color:var(--label2)">Нет элементов — сохрани расчёт на эту отметку</div>`:'';
       const markTotal=realEntries.length>0?`<div class="mark-total"><span class="mt-label">Итог отм. ${mark}</span><div class="mt-vals"><span class="mt-val form">${mF.toFixed(2)} м²</span><span class="mt-val conc">${mV.toFixed(2)} м³</span></div></div>`:'';
 
+      // Determine mark checkbox state
+      const inSelModeM=selectionMode&&String(selectionMode.bId)===String(b.id);
+      let markCbState='';
+      if(inSelModeM&&realEntries.length>0){
+        const selN=realEntries.filter(e=>selectionMode.selected.has(String(e.id))).length;
+        if(selN===realEntries.length)markCbState='checked';
+        else if(selN>0)markCbState='partial';
+      }
+
       return`<div class="mark-group" data-mark="${mark}" data-bid="${b.id}">
-        <div class="mark-group-header" onclick="toggleMark('${mgid}')">
-          <div class="mark-dot"></div>
+        <div class="mark-group-header" onclick="${inSelModeM?`toggleMarkSelection(${b.id},'${mark.replace(/'/g,"\\'")}',event)`:`toggleMark('${mgid}')`}">
+          ${inSelModeM&&realEntries.length>0?`<div class="mark-sel-checkbox ${markCbState}" data-mark="${mark}"></div>`:'<div class="mark-dot"></div>'}
           <div style="flex:1;min-width:0">
             <div class="mark-label">Отм. ${mark}</div>
             <div style="font-size:12px;color:var(--label2);margin-top:1px">${realEntries.length} эл. · ${mF.toFixed(1)} м²${mV>0?' · '+mV.toFixed(1)+' м³':''}${mRebKg>0?' · '+(mRebKg/1000).toFixed(3)+' т':''}</div>
           </div>
-          <button style="background:none;border:none;color:var(--label3);font-size:16px;cursor:pointer;padding:4px 8px;flex-shrink:0" onclick="event.stopPropagation();renameMark(${b.id},'${mark.replace(/'/g,"\\'")}')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+          ${inSelModeM?'':`<button style="background:none;border:none;color:var(--label3);font-size:16px;cursor:pointer;padding:4px 8px;flex-shrink:0" onclick="event.stopPropagation();renameMark(${b.id},'${mark.replace(/'/g,"\\'")}')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>`}
           <span class="mark-chevron" id="mchev-${mgid}">›</span>
         </div>
         <div class="mark-body" id="mbody-${mgid}" data-mark="${mark}" data-bid="${b.id}">
@@ -3675,11 +3978,12 @@ function renderJournal(keepState){
       </div>`;
     }).join('');
 
-    return`<div class="building-card">
-      <div class="building-header" onclick="toggleBuilding(${b.id})">
+    const selCount=inSelMode?selectionMode.selected.size:0;
+    return`<div class="building-card${inSelMode?' selection-mode':''}">
+      <div class="building-header" onclick="${inSelMode?'':`toggleBuilding(${b.id})`}">
         <div class="building-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4"/><rect x="9" y="9" width="2" height="2"/><rect x="13" y="9" width="2" height="2"/></svg></div>
         <div class="building-info">
-          <div class="building-name">${b.name}</div>
+          <div class="building-name">${b.name}${inSelMode?' <span style="font-size:13px;color:var(--blue);font-weight:600">· выбрано '+selCount+'</span>':''}</div>
           <div class="building-meta">${entries.length} эл. · ${tF.toFixed(1)} м² · ${tV.toFixed(1)} м³</div>
         </div>
         <span class="building-chevron" id="bchev-${b.id}">›</span>
@@ -3690,13 +3994,18 @@ function renderJournal(keepState){
           ${marksHTML}
         </div>
         <div class="building-footer">
-          <button class="bf-btn add" onclick="addMarkToBuilding(${b.id})">+ Отметка</button>
-          <button class="bf-btn del" onclick="confirmDeleteBuilding(${b.id})">Удалить здание</button>
+          ${inSelMode
+            ?`<button class="bf-btn sel" onclick="selectAllInBuilding(${b.id})">Выбрать все</button>
+              <button class="bf-btn del" onclick="exitSelectionMode()">Готово</button>`
+            :`<button class="bf-btn add" onclick="addMarkToBuilding(${b.id})">+ Отметка</button>
+              ${entries.length>0?`<button class="bf-btn sel" onclick="enterSelectionMode(${b.id})">Выбрать</button>`:''}
+              <button class="bf-btn del" onclick="confirmDeleteBuilding(${b.id})">Удалить</button>`}
         </div>
       </div>
     </div>`;
   }).join('');
   if(state)requestAnimationFrame(()=>restoreJournalState(state));
+  updateBulkBar();
 }
 
 function renderGrandSummary(){
@@ -3740,6 +4049,7 @@ function closeAllSwipes(){
 const _swipe={startX:0,startY:0,id:null,isSwipe:false,moved:false};
 
 document.addEventListener('touchstart',e=>{
+  if(selectionMode)return;
   const inner=e.target.closest('.entry-swipe-inner');
   if(!inner)return;
   _swipe.startX=e.touches[0].clientX;
@@ -3826,7 +4136,8 @@ document.addEventListener('touchstart',ev=>{
   // Close swipe on outside tap
   if(_swipeCurrent&&!ev.target.closest('.entry-swipe-wrap'))closeAllSwipes();
 
-  // Start long-press drag timer
+  // Start long-press drag timer (disabled in selection mode)
+  if(selectionMode)return;
   const inner=ev.target.closest('.entry-swipe-inner');
   if(!inner||_swipeCurrent)return;
   const bId=inner.dataset.bid,eId=inner.dataset.eid;
